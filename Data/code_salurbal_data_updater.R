@@ -2,11 +2,14 @@ rm(list=ls())
 options(timeout=14400)
 source("code_salurbal_data_updater_util.R")
 
-# load("../../SALURBAL Covid19 Files/tmp_files/work_space.RData")
+# load("tmp_files/work_space.RData")
 
 ####  1. Unzip files to temp folder ------- 
-zipped_dir = "//files.drexel.edu/colleges/SOPH/Shared/UHC/Projects/Bilal_DP5/Data/SALURBAL_dp5_server/covid_data/salurbal_covid.zip"
-zip::unzip(zipfile = zipped_dir, exdir = "../../SALURBAL Covid19 Files/tmp_files")
+if (as.numeric(format(Sys.time(), "%H"))>21){
+  zipped_dir = "//files.drexel.edu/colleges/SOPH/Shared/UHC/Projects/Bilal_DP5/Data/SALURBAL_dp5_server/covid_data/salurbal_covid.zip"
+  zip::unzip(zipfile = zipped_dir, 
+             exdir = "tmp_files")
+}
 
 #### 2. Country Level  ------- 
 try_country = try({
@@ -164,7 +167,7 @@ try_country = try({
 
 try_BR = try({
   #### ___3.1 Get Raw Data ####
-  raw_br_mun_file  =  fread("../../SALURBAL Covid19 Files/tmp_files/cases-brazil-cities-time.csv.gz") %>% 
+  raw_br_mun_file  =  fread("tmp_files/cases-brazil-cities-time.csv.gz") %>% 
     as_tibble() %>% 
     filter(ibgeID != "0") %>% 
     filter(!str_detect(string = city, pattern = "INDEFINIDA")) %>% 
@@ -201,7 +204,7 @@ try_BR = try({
     ungroup()
   
   load("helper_files/xwalk_BR_states.rdata")
-  br_state_tmp  = fread("../../SALURBAL Covid19 Files/tmp_files/brazil_state_tmp.csv") %>%
+  br_state_tmp  = fread("tmp_files/brazil_state_tmp.csv") %>%
     as_tibble() %>% #stringi::stri_trans_general(.x, "Latin-ASCII")
     select(date,
            loc = state,
@@ -290,7 +293,7 @@ try_MX = try({
   #### ___4.1 Raw Data  ####
   
   ## Cases at Municipal Level
-  raw_mx_mun_confirmed  = fread("../../SALURBAL Covid19 Files/tmp_files/mx_mun_cases_tmp.csv") %>% 
+  raw_mx_mun_confirmed  = fread("tmp_files/mx_mun_cases_tmp.csv") %>% 
     as_tibble() %>% 
     select(FECHA_INGRESO,RESULTADO=RESULTADO_LAB ,ENTIDAD_RES,MUNICIPIO_RES) %>% 
     filter(RESULTADO==1) %>%
@@ -307,7 +310,7 @@ try_MX = try({
     select(mun, date, confirmed) %>% 
     arrange(mun, date) 
   
-  raw_mx_mun_tests  = fread("../../SALURBAL Covid19 Files/tmp_files/mx_mun_cases_tmp.csv") %>% 
+  raw_mx_mun_tests  = fread("tmp_files/mx_mun_cases_tmp.csv") %>% 
     as_tibble() %>% 
     select(FECHA_INGRESO,RESULTADO=RESULTADO_LAB ,ENTIDAD_RES,MUNICIPIO_RES) %>% 
     filter(RESULTADO%in%c(1,2)) %>%
@@ -335,7 +338,7 @@ try_MX = try({
     ggplot(aes(date, tests))+
     geom_line()
   
-  raw_mx_mun_deaths = fread("../../SALURBAL Covid19 Files/tmp_files/mx_mun_cases_tmp.csv") %>% 
+  raw_mx_mun_deaths = fread("tmp_files/mx_mun_cases_tmp.csv") %>% 
     as_tibble() %>% 
     select(FECHA_DEF,RESULTADO=RESULTADO_LAB,ENTIDAD_RES,MUNICIPIO_RES) %>% 
     filter(RESULTADO==1)%>%
@@ -659,7 +662,7 @@ try_CL = try({
   #### ___5.1 Get raw Data ####
   
   ## Cases at Municipal Level
-  xwalk_state_cl = fread("../../SALURBAL Covid19 Files/tmp_files/chile_raw_counts_tmp.csv") %>% as_tibble() %>% 
+  xwalk_state_cl = fread("tmp_files/chile_raw_counts_tmp.csv") %>% as_tibble() %>% 
     select(state = Region, state_id = "Codigo region") %>% distinct() %>% 
     mutate(state_id = str_pad(state_id, width = 2, pad = "0")) %>% 
     mutate_if(is.character,~stringi::stri_trans_general(.x, "Latin-ASCII")) %>% 
@@ -676,7 +679,7 @@ try_CL = try({
     mutate(state =  paste0(toupper(substr(state, 1, 1)), substr(state, 2, nchar(state))))
   
   
-  raw_cl_counts_mun_file =  fread("../../SALURBAL Covid19 Files/tmp_files/chile_raw_counts_tmp.csv") %>% 
+  raw_cl_counts_mun_file =  fread("tmp_files/chile_raw_counts_tmp.csv") %>% 
     as_tibble() %>% 
     select(-c(Tasa,Region,"Codigo region",Comuna, Poblacion)) %>% 
     rename(mun = "Codigo comuna") %>% 
@@ -714,7 +717,7 @@ try_CL = try({
     ungroup() %>%
     select(mun, date, rollsum_cases)
   
-  raw_cl_tests_mun  =  fread("../../SALURBAL Covid19 Files/tmp_files/chile_raw_tests_tmp.csv") %>% 
+  raw_cl_tests_mun  =  fread("tmp_files/chile_raw_tests_tmp.csv") %>% 
     as_tibble() %>% 
     mutate(mun = str_pad(`Codigo comuna`, width = 5, pad = '0')) %>% 
     select(mun, date = fecha, pos= positividad ) %>% 
@@ -724,7 +727,7 @@ try_CL = try({
     filter(!is.na(rollsum_cases)) %>% 
     mutate(tests_rollsum = rollsum_cases/pos) 
   
-  raw_cl_deaths_mun_file  =  fread("../../SALURBAL Covid19 Files/tmp_files/chile_raw_deaths_tmp.csv") %>% 
+  raw_cl_deaths_mun_file  =  fread("tmp_files/chile_raw_deaths_tmp.csv") %>% 
     as_tibble() %>% 
     select(mun = "Codigo comuna",
            date = "Fecha",
@@ -900,7 +903,7 @@ try_CL = try({
 #### 6. Columbia  ####
 try_CO = try({
   #### ___6.1 Get raw Data ####
-  raw_co_mun_confirmed  = fread("../../SALURBAL Covid19 Files/tmp_files/colombia_tmp.csv") %>% 
+  raw_co_mun_confirmed  = fread("tmp_files/colombia_tmp.csv") %>% 
     as_tibble() %>%  
     clean_names() %>%
     select(date = contains("fecha_de_notifica"),
@@ -919,7 +922,7 @@ try_CO = try({
     select(mun, date, confirmed) %>% 
     arrange(mun, date)
   
-  raw_co_mun_deaths  = fread("../../SALURBAL Covid19 Files/tmp_files/colombia_tmp.csv") %>% 
+  raw_co_mun_deaths  = fread("tmp_files/colombia_tmp.csv") %>% 
     as_tibble() %>%  
     clean_names() %>%
     select(date = contains("fecha_de_muer"),
@@ -1059,7 +1062,7 @@ try_PE = try({
   
   
   ## Download Data
-  peru_mun_cases_raw = fread("../../SALURBAL Covid19 Files/tmp_files/url_peru_cases_tmp.csv") %>% 
+  peru_mun_cases_raw = fread("tmp_files/url_peru_cases_tmp.csv") %>% 
     as_tibble() %>% 
     filter(METODODX=="PCR") %>% 
     filter(DISTRITO!="EN INVESTIGACIÃN") %>% 
@@ -1081,7 +1084,7 @@ try_PE = try({
   peru_mun_cases = peru_mun_cases_raw %>% 
     count(state,date, mun_id, name = "confirmed")
   
-  peru_mun_deaths_raw = fread("../../SALURBAL Covid19 Files/tmp_files/url_peru_deaths_tmp.csv") %>% as_tibble()%>% 
+  peru_mun_deaths_raw = fread("tmp_files/url_peru_deaths_tmp.csv") %>% as_tibble()%>% 
     filter(DISTRITO!="EN INVESTIGACIÃN") %>% 
     filter(DISTRITO!="") %>% 
     select(date = FECHA_FALLECIMIENTO,
@@ -1224,13 +1227,13 @@ try_PE = try({
   tidy.daily.pe.l1 = clean_daily_salurbal_smooth(full_pe_l1)%>% ungroup()%>% mutate(level = "L1")
   tidy.daily.pe.l2 = clean_daily_salurbal_smooth(full_pe_l2)%>% ungroup()%>% mutate(level = "L2")
   print("Okay")
-  })
+})
 
 #### 8. Guatemala ####
 try_GT = try({
   #### ___8.1  Get raw data  #####
   ## Raw cases (raw_gt_mun_cases)
-  raw_gt_mun_cases = fread("../../SALURBAL Covid19 Files/tmp_files/gt_cases_tmp.csv") %>% 
+  raw_gt_mun_cases = fread("tmp_files/gt_cases_tmp.csv") %>% 
     as_tibble() %>% 
     clean_names() %>% 
     select(-c(departamento,municipio, poblacion, codigo_departamento)) %>% 
@@ -1247,7 +1250,7 @@ try_GT = try({
     ungroup()
   
   ## Raw Tests (raw_gt_mun_tests)
-  raw_gt_mun_tests = fread("../../SALURBAL Covid19 Files/tmp_files/gt_tests_tmp.csv") %>% 
+  raw_gt_mun_tests = fread("tmp_files/gt_tests_tmp.csv") %>% 
     as_tibble() %>% 
     clean_names() %>% 
     select(-c(departamento,municipio, poblacion, codigo_departamento)) %>% 
@@ -1267,7 +1270,7 @@ try_GT = try({
     geom_line()+
     theme(legend.position = 'none')
   ## Raw deaths (raw_gt_mun_deaths)
-  raw_gt_mun_deaths = fread("../../SALURBAL Covid19 Files/tmp_files/gt_deaths_tmp.csv" ) %>% 
+  raw_gt_mun_deaths = fread("tmp_files/gt_deaths_tmp.csv" ) %>% 
     as_tibble() %>% 
     clean_names() %>% 
     select(-c(departamento,municipio, poblacion, codigo_departamento)) %>% 
@@ -1508,7 +1511,7 @@ try_GT = try({
 try_AR = try({
   #### ___9.1  Get raw data  #####
   ## Raw BA Data
-  ar_micro_BA_raw = fread("../../SALURBAL Covid19 Files/tmp_files/casos_covid19.csv") %>% 
+  ar_micro_BA_raw = fread("tmp_files/casos_covid19.csv") %>% 
     as_tibble() %>% 
     filter(provincia== "CABA") %>% 
     filter(clasificacion=="confirmado") %>%   
@@ -1526,7 +1529,7 @@ try_AR = try({
   
   
   ## Raw Agertina Data
-  ar_micro_raw = fread("../../SALURBAL Covid19 Files/tmp_files/Covid19Casos.csv") %>% 
+  ar_micro_raw = fread("tmp_files/Covid19Casos.csv") %>% 
     # filter(residencia_provincia_nombre!="CABA") %>% 
     as_tibble() %>%
     select(prov = residencia_provincia_id,
@@ -1579,7 +1582,7 @@ try_AR = try({
   #   geom_line()
   
   ## Raw Testing (ar_mun_tests)
-  ar_BA_testing  = fread("../../SALURBAL Covid19 Files/tmp_files/casos_covid19.csv") %>% 
+  ar_BA_testing  = fread("tmp_files/casos_covid19.csv") %>% 
     as_tibble() %>% 
     filter(provincia== "CABA") %>% 
     filter(clasificacion%in%c("confirmado","descartado")) %>% 
@@ -1604,7 +1607,7 @@ try_AR = try({
     arrange(date) %>% 
     ggplot(aes(date, tests, col = mun))+geom_line()+
     theme(legend.position = 'none')
-  ar_mun_tests = fread("../../SALURBAL Covid19 Files/tmp_files/argentina_testing_tmp.csv") %>% 
+  ar_mun_tests = fread("tmp_files/argentina_testing_tmp.csv") %>% 
     as_tibble() %>% 
     select(date = fecha,
            prov=codigo_indec_provincia,
@@ -2095,7 +2098,7 @@ try_compile = try({
   print("Okay")
 })
 #### 11. Saving Rdata (covid19_processed_data.rdata) ####
-try_save = try({
+
   #### ___11.1 -  tidy.daily  ####
   tidy.daily.subnational = list(tidy.daily.br.state,
                                 tidy.daily.br.l1 %>% filter(loc!= "Vitoria"),
@@ -2335,152 +2338,154 @@ try_save = try({
     filter(level%in%c("L1","L2"))
   
   #### ___11.3 - Outputs   ###### 
-  library(zip)
-  ##  Daily Counts
-  raw.daily.subnational =  tidy.daily.subnational %>%
-    filter(!type%in%c( "positivity","tests")) %>%
-    filter(level%in%c("L1","L2")) %>%
-    mutate(type = type %>% recode("confirmed"="cases")) %>%
-    mutate(rate = 'raw count')%>%
-    mutate(type = type %>% recode("positivity"="tests")) %>%
-    select(level,country, type, rate, salid, loc, date,value = daily_counts )
-  ## Get Daily Rate
-  raw.daily.subnational.rates =  tidy.daily.data %>%
-    filter(level%in%c("L1","L2")) %>%
-    filter(!type%in%c( "positivity","tests")) %>%
-    filter(rate =="rate") %>%
-    mutate(rate_label = type %>% recode(
-      "cases"="New Cases per 1M",
-      "deaths"="New Deaths per 10M",
-      "tests"="New Tests per 1M"
-    )) %>%
-    select(level,country, salid, loc, type, date, rate_7dayMA = value,rate_label )
-  tidy.daily.data.output_1 = tidy.daily.data %>%
-    bind_rows(raw.daily.subnational) %>%
-    filter(rate !="rate") %>%
-    filter(!type%in%c( "positivity","tests")) %>%
-    rename(count_smoothed = rate) %>%
-    mutate(count_smoothed = count_smoothed %>%
-             recode("count"="count_7dayMA",
-                    "raw count"="count_raw")) %>%
-    pivot_wider(names_from = count_smoothed, values_from = value) %>%
-    left_join(bind_rows(pop_l1,pop_l2) %>% select(salid = loc, pop)) %>%
-    select(level, country, salid,loc, type, date,count_raw,count_7dayMA)%>%
-    arrange(level, country, salid, loc, type,date) %>%
-    mutate_at(vars(count_raw, count_7dayMA), ~ifelse(.x<0,NA,.x))  %>%
-    left_join(raw.daily.subnational.rates %>%
-                select(level, salid, type, date,rate_7dayMA, rate_label ),
-              by =c("level", "salid","type", "date")) %>% 
-    mutate(country = country %>% 
-             recode("Argentina"="AR",
-                    "Brazil"="BR",
-                    "Chile"="CO",
-                    "Guatemala"="GT",
-                    "Mexico"="MX",
-                    "Peru"="PE")) %>% 
-    select(country, level, salid, type, date, 
-           count_raw, count_7dayMA,
-           rate_7dayMA, rate_label) %>% 
-    distinct()
-  
-  tidy.daily.data.output = tidy.daily.data.output_1 %>% 
-    select(-rate_label) %>% 
-    pivot_wider(names_from = type, values_from = c(count_raw, count_7dayMA, rate_7dayMA)) %>% 
-    select(country, level, salid, date, 
-           cases_raw = count_raw_cases,
-           cases_7dayMA = count_7dayMA_cases,
-           cases_per_1M = rate_7dayMA_cases, 
-           deaths_raw = count_raw_deaths,
-           deaths_7dayMA = count_7dayMA_deaths,
-           deaths_per_10M = rate_7dayMA_deaths) %>% 
-    mutate_at(vars(cases_raw,cases_7dayMA,cases_per_1M,deaths_raw,deaths_7dayMA,deaths_per_10M),
-              ~round(.x,0))
-  fwrite(tidy.daily.data.output,"../Outputs/SALURBAL_COVID19_trends_cases_death.csv")
-  zip::zip(files= c("../Outputs/SALURBAL_COVID19_trends_cases_death.csv"),
-           zipfile = "../Outputs/SALURBAL_COVID19_trends_cases_death.zip",
-           mode = "cherry-pick")
-  ## Daily Testing
-  tidy.daily.testing.output = tidy.daily.data %>% 
-    filter(type%in%c( "positivity","tests")) %>% 
-    pivot_wider(values_from = value, names_from = c(type,rate))%>% 
-    mutate(country = country %>% 
-             recode("Argentina"="AR",
-                    "Brazil"="BR",
-                    "Chile"="CO",
-                    "Guatemala"="GT",
-                    "Mexico"="MX",
-                    "Peru"="PE")) %>% 
-    select(-loc)%>% 
-    distinct() %>% 
-    select(country, level, salid, date, 
-           tests = tests_count,
-           tests_per_1M = tests_rate,
-           pct_positive = positivity_rate) %>% 
-    mutate_at(vars(tests,tests_per_1M,pct_positive),
-              ~round(.x,0))
-  fwrite(tidy.daily.testing.output,"../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv")
-  zip::zip(files ="../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv",
-           zipfile = "../Outputs/SALURBAL_COVID19_trends_tests_positivity.zip",
-           mode = "cherry-pick")
-  
-  ## Cumulative counts
-  tidy.cumulative.output =  tidy.cumulative %>%
-    filter(!type%in%c("positivity","tests")) %>% 
-    filter(level%in%c("L1","L2")) %>% 
-    select(level, country, salid,type, rate, rate_cleaned,date, n) %>% 
-    group_by(level, country, salid,type, rate, rate_cleaned) %>% 
-    group_modify(~{
-      .x %>% filter(date == max(date))
-    }) %>% 
-    ungroup() %>% 
-    mutate(country = country %>% 
-             recode("Argentina"="AR",
-                    "Brazil"="BR",
-                    "Chile"="CO",
-                    "Guatemala"="GT",
-                    "Mexico"="MX",
-                    "Peru"="PE"))%>% 
-    mutate(rate_cleaned = str_replace(rate_cleaned,
-                                      "count",
-                                      type) %>% 
-             recode("cases per 1 M"="cases_per_1M",
-                    "deaths per 10 M"="deaths_per_10M",
-                    "Tests per 1 M"="test_per_1M",
-                    "% of Tests Positive"="pct_positive")) %>% 
-    select(level, country, salid,rate_cleaned, n) %>% 
-    pivot_wider(names_from = rate_cleaned, values_from = n) %>% 
-    drop_na()
-  fwrite(tidy.cumulative.output,"../Outputs/SALURBAL_COVID19_cumulative_cases_death.csv")
-
-  ## Cumulative Tests
-  tidy.cumulative.testing.output =  tidy.cumulative %>%
-    filter(type%in%c("positivity","tests")) %>% 
-    filter(level%in%c("L1","L2")) %>% 
-    select(level, country, salid,type, rate, rate_cleaned,date, n) %>% 
-    group_by(level, country, salid,type, rate, rate_cleaned) %>% 
-    group_modify(~{
-      .x %>% filter(date == max(date))
-    }) %>% 
-    ungroup() %>% 
-    mutate(country = country %>% 
-             recode("Argentina"="AR",
-                    "Brazil"="BR",
-                    "Chile"="CO",
-                    "Guatemala"="GT",
-                    "Mexico"="MX",
-                    "Peru"="PE"))%>% 
-    mutate(rate_cleaned = str_replace(rate_cleaned,
-                                      "count",
-                                      type) %>% 
-             recode("cases per 1 M"="cases_per_1M",
-                    "deaths per 10 M"="deaths_per_10M",
-                    "Tests per 1 M"="test_per_1M",
-                    "% of Tests Positive"="pct_positive")) %>% 
-    select(level, country, salid,rate_cleaned, n) %>% 
-    pivot_wider(names_from = rate_cleaned, values_from = n) %>% 
-    drop_na()
-  fwrite(tidy.cumulative.testing.output,"../Outputs/SALURBAL_COVID19_cumulative_tests_positivity.csv")
-
+  if (!str_detect(getwd(),"Dev")){
+    library(zip)
+    ##  Daily Counts
+    raw.daily.subnational =  tidy.daily.subnational %>%
+      filter(!type%in%c( "positivity","tests")) %>%
+      filter(level%in%c("L1","L2")) %>%
+      mutate(type = type %>% recode("confirmed"="cases")) %>%
+      mutate(rate = 'raw count')%>%
+      mutate(type = type %>% recode("positivity"="tests")) %>%
+      select(level,country, type, rate, salid, loc, date,value = daily_counts )
+    ## Get Daily Rate
+    raw.daily.subnational.rates =  tidy.daily.data %>%
+      filter(level%in%c("L1","L2")) %>%
+      filter(!type%in%c( "positivity","tests")) %>%
+      filter(rate =="rate") %>%
+      mutate(rate_label = type %>% recode(
+        "cases"="New Cases per 1M",
+        "deaths"="New Deaths per 10M",
+        "tests"="New Tests per 1M"
+      )) %>%
+      select(level,country, salid, loc, type, date, rate_7dayMA = value,rate_label )
+    tidy.daily.data.output_1 = tidy.daily.data %>%
+      bind_rows(raw.daily.subnational) %>%
+      filter(rate !="rate") %>%
+      filter(!type%in%c( "positivity","tests")) %>%
+      rename(count_smoothed = rate) %>%
+      mutate(count_smoothed = count_smoothed %>%
+               recode("count"="count_7dayMA",
+                      "raw count"="count_raw")) %>%
+      pivot_wider(names_from = count_smoothed, values_from = value) %>%
+      left_join(bind_rows(pop_l1,pop_l2) %>% select(salid = loc, pop)) %>%
+      select(level, country, salid,loc, type, date,count_raw,count_7dayMA)%>%
+      arrange(level, country, salid, loc, type,date) %>%
+      mutate_at(vars(count_raw, count_7dayMA), ~ifelse(.x<0,NA,.x))  %>%
+      left_join(raw.daily.subnational.rates %>%
+                  select(level, salid, type, date,rate_7dayMA, rate_label ),
+                by =c("level", "salid","type", "date")) %>% 
+      mutate(country = country %>% 
+               recode("Argentina"="AR",
+                      "Brazil"="BR",
+                      "Chile"="CO",
+                      "Guatemala"="GT",
+                      "Mexico"="MX",
+                      "Peru"="PE")) %>% 
+      select(country, level, salid, type, date, 
+             count_raw, count_7dayMA,
+             rate_7dayMA, rate_label) %>% 
+      distinct()
+    
+    tidy.daily.data.output = tidy.daily.data.output_1 %>% 
+      select(-rate_label) %>% 
+      pivot_wider(names_from = type, values_from = c(count_raw, count_7dayMA, rate_7dayMA)) %>% 
+      select(country, level, salid, date, 
+             cases_raw = count_raw_cases,
+             cases_7dayMA = count_7dayMA_cases,
+             cases_per_1M = rate_7dayMA_cases, 
+             deaths_raw = count_raw_deaths,
+             deaths_7dayMA = count_7dayMA_deaths,
+             deaths_per_10M = rate_7dayMA_deaths) %>% 
+      mutate_at(vars(cases_raw,cases_7dayMA,cases_per_1M,deaths_raw,deaths_7dayMA,deaths_per_10M),
+                ~round(.x,0))
+    fwrite(tidy.daily.data.output,"../Outputs/SALURBAL_COVID19_trends_cases_death.csv")
+    zip::zip(files= c("../Outputs/SALURBAL_COVID19_trends_cases_death.csv"),
+             zipfile = "../Outputs/SALURBAL_COVID19_trends_cases_death.zip",
+             mode = "cherry-pick")
+    ## Daily Testing
+    tidy.daily.testing.output = tidy.daily.data %>% 
+      filter(type%in%c( "positivity","tests")) %>% 
+      pivot_wider(values_from = value, names_from = c(type,rate))%>% 
+      mutate(country = country %>% 
+               recode("Argentina"="AR",
+                      "Brazil"="BR",
+                      "Chile"="CO",
+                      "Guatemala"="GT",
+                      "Mexico"="MX",
+                      "Peru"="PE")) %>% 
+      select(-loc)%>% 
+      distinct() %>% 
+      select(country, level, salid, date, 
+             tests = tests_count,
+             tests_per_1M = tests_rate,
+             pct_positive = positivity_rate) %>% 
+      mutate_at(vars(tests,tests_per_1M,pct_positive),
+                ~round(.x,0))
+    fwrite(tidy.daily.testing.output,"../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv")
+    zip::zip(files ="../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv",
+             zipfile = "../Outputs/SALURBAL_COVID19_trends_tests_positivity.zip",
+             mode = "cherry-pick")
+    
+    ## Cumulative counts
+    tidy.cumulative.output =  tidy.cumulative %>%
+      filter(!type%in%c("positivity","tests")) %>% 
+      filter(level%in%c("L1","L2")) %>% 
+      select(level, country, salid,type, rate, rate_cleaned,date, n) %>% 
+      group_by(level, country, salid,type, rate, rate_cleaned) %>% 
+      group_modify(~{
+        .x %>% filter(date == max(date))
+      }) %>% 
+      ungroup() %>% 
+      mutate(country = country %>% 
+               recode("Argentina"="AR",
+                      "Brazil"="BR",
+                      "Chile"="CO",
+                      "Guatemala"="GT",
+                      "Mexico"="MX",
+                      "Peru"="PE"))%>% 
+      mutate(rate_cleaned = str_replace(rate_cleaned,
+                                        "count",
+                                        type) %>% 
+               recode("cases per 1 M"="cases_per_1M",
+                      "deaths per 10 M"="deaths_per_10M",
+                      "Tests per 1 M"="test_per_1M",
+                      "% of Tests Positive"="pct_positive")) %>% 
+      select(level, country, salid,rate_cleaned, n) %>% 
+      pivot_wider(names_from = rate_cleaned, values_from = n) %>% 
+      drop_na()
+    fwrite(tidy.cumulative.output,"../Outputs/SALURBAL_COVID19_cumulative_cases_death.csv")
+    
+    ## Cumulative Tests
+    tidy.cumulative.testing.output =  tidy.cumulative %>%
+      filter(type%in%c("positivity","tests")) %>% 
+      filter(level%in%c("L1","L2")) %>% 
+      select(level, country, salid,type, rate, rate_cleaned,date, n) %>% 
+      group_by(level, country, salid,type, rate, rate_cleaned) %>% 
+      group_modify(~{
+        .x %>% filter(date == max(date))
+      }) %>% 
+      ungroup() %>% 
+      mutate(country = country %>% 
+               recode("Argentina"="AR",
+                      "Brazil"="BR",
+                      "Chile"="CO",
+                      "Guatemala"="GT",
+                      "Mexico"="MX",
+                      "Peru"="PE"))%>% 
+      mutate(rate_cleaned = str_replace(rate_cleaned,
+                                        "count",
+                                        type) %>% 
+               recode("cases per 1 M"="cases_per_1M",
+                      "deaths per 10 M"="deaths_per_10M",
+                      "Tests per 1 M"="test_per_1M",
+                      "% of Tests Positive"="pct_positive")) %>% 
+      select(level, country, salid,rate_cleaned, n) %>% 
+      pivot_wider(names_from = rate_cleaned, values_from = n) %>% 
+      drop_na()
+    fwrite(tidy.cumulative.testing.output,"../Outputs/SALURBAL_COVID19_cumulative_tests_positivity.csv")
+    
+  }
   
   #### ___11.4 - App Data ####
   ## Subset to every 3 days 
@@ -2555,108 +2560,80 @@ try_save = try({
     filter(date>=as.integer(mdy(cutoff_date)))
   
   
-  #### STATIC
-  ## Local
-  save(
-    countries_salurbal,other_central_countries,other_south_countries,
-    other_carribean_countries,other_lac_countries,lac_countries,minc,mind,
-    countries_references,countries_interest,col_rolling,
-    country_coords,
-    sf_world,salurbal_l1_sf,sf_salurbal_0.8,  
-    xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
-    tidy.data.all.old,
-    file = "../Clean/covid19_processed_data_static.rdata")
-  ## Dev
-  save(
-    countries_salurbal,other_central_countries,other_south_countries,
-    other_carribean_countries,other_lac_countries,lac_countries,minc,mind,
-    countries_references,countries_interest,col_rolling,
-    country_coords,
-    sf_world,salurbal_l1_sf,sf_salurbal_0.8,  
-    xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
-    tidy.data.all.old,
-    file = "../../SALURBAL Covid19 Project/covid19_salurbal_dev/covid19_processed_data_static.rdata")
   
-  #### DYNAMIC 
-  ## Local
-  save(
-    df_map_data,map_global_totals,subset_dates_tmp,
-    choices_df,
-    tidy.data.all.new,
-    file = "../Clean/covid19_processed_data_dynamic.rdata")
-  ## Dev
-  save(
-    df_map_data,map_global_totals,subset_dates_tmp,
-    choices_df,
-    tidy.data.all.new,
-    file = "../../SALURBAL Covid19 Project/covid19_salurbal_dev/covid19_processed_data_dynamic.rdata")
+  #### 12. QC  ####
+  #### ___12.1 -  Check for download cut offs and Access Date   ####
+  files_full = list.files(path ="tmp_files/", full.names = T)
+  details = file.info(files_full) %>% 
+    rownames_to_column(var = "full_path") %>% 
+    mutate(country = str_remove(full_path, "tmp_files/") %>% 
+             recode("argentina_testing_tmp.csv"= "Argentina",
+                    "brazil_state_tmp.csv"="Brazil",
+                    "cases-brazil-cities-time.csv.gz"="Brazil",
+                    "casos_covid19.csv" = "Argentina",
+                    "chile_raw_counts_tmp.csv" = "Chile",
+                    "colombia_tmp.csv"="Colombia",
+                    "gt_cases_tmp.csv"="Guatemala",
+                    "mx_mun_cases_tmp.csv"="Mexico",
+                    "url_peru_cases_tmp.csv"="Peru"
+             )) %>% 
+    as_tibble() %>% 
+    select(country,mtime ) %>% 
+    filter(!str_detect(country,"csv")) %>% 
+    filter(!str_detect(country,"RData")) %>% 
+    group_by(country) %>% 
+    summarize(date_access = as.Date(min(mtime)),
+              date_access2 = format(as.Date(min(mtime)),"%b %d, %y")) %>%
+    ungroup()
+  
+  df_access = tidy.daily %>% 
+    filter(level%in%c("L1")) %>% 
+    filter(rate=='count') %>% 
+    filter(type == "cases") %>% 
+    select(level, country, type, date) %>% 
+    distinct() %>% 
+    left_join(details) %>% 
+    group_by(country, level, type) %>% 
+    group_modify(~{
+      max_date_tmp = .x %>% pull(date) %>% max() %>% format("%b %d, %y")
+      min_date_tmp = .x %>% pull(date) %>% min() %>% format("%b %d, %y")
+      n_tmp = nrow(.x)
+      ref_n_days =  as.integer(Sys.Date()-mdy("03-30-2020"))
+      .x %>% 
+        select(-date) %>% 
+        distinct() %>% 
+        mutate(access_date = ifelse(n_tmp>ref_n_days,
+                                    paste0(date_access2),
+                                    "Error: Missing Days" ) )
+    }) %>% 
+    ungroup() %>% 
+    arrange(country) %>% 
+    select(Step = country,access_date)
+  
+  
+  
+  #### ___12.2 -  Save Error Log   ####
+  df_update_status = tibble(Step = c("Country (JHU)","Brazil","Mexico","Chile",
+                                     "Colombia","Peru", "Guatemala","Argentina",
+                                     "Compile")) %>% 
+    mutate(Status = c(try_country, try_BR,try_MX,try_CL,
+                      try_CO,try_PE,try_GT,try_AR,
+                      try_compile)) %>% 
+    left_join(df_access) %>% 
+    mutate(access_date = ifelse(Step%in%c("Country (JHU)","Compile","Save"),
+                                format( Sys.Date() ,"%b %d, %y"),
+                                access_date)) %>% 
+    rename(`Access Date`= access_date)
+  if (str_detect(getwd(),"Dev")){
+    fwrite(df_update_status,file = "status_log.csv")
+    save(df_update_status,file = "status_log.rdata")
+  } else {
+    fwrite(df_update_status,file = "status_log.csv")
+    save(df_update_status,file = "status_log.rdata")
+    fwrite(df_update_status,file = "../Clean/status_log.csv")
+  }
+  #### ___12.3 -  Save Image   ####
+  save.image(file = "tmp_files/space.RData")
   print("Okay")
-})
-#### 12. QC  ####
-#### ___12.1 -  Check for download cut offs and Access Date   ####
-files_full = list.files(path ="../../SALURBAL Covid19 Files/tmp_files/", full.names = T)
-details = file.info(files_full) %>% 
-  rownames_to_column(var = "full_path") %>% 
-  mutate(country = str_remove(full_path, "../../SALURBAL Covid19 Files/tmp_files/") %>% 
-           recode("argentina_testing_tmp.csv"= "Argentina",
-                  "brazil_state_tmp.csv"="Brazil",
-                  "cases-brazil-cities-time.csv.gz"="Brazil",
-                  "casos_covid19.csv" = "Argentina",
-                  "chile_raw_counts_tmp.csv" = "Chile",
-                  "colombia_tmp.csv"="Colombia",
-                  "gt_cases_tmp.csv"="Guatemala",
-                  "mx_mun_cases_tmp.csv"="Mexico",
-                  "url_peru_cases_tmp.csv"="Peru"
-           )) %>% 
-  as_tibble() %>% 
-  select(country,mtime ) %>% 
-  filter(!str_detect(country,"csv")) %>% 
-  filter(!str_detect(country,"RData")) %>% 
-  group_by(country) %>% 
-  summarize(date_access = as.Date(min(mtime)),
-            date_access2 = format(as.Date(min(mtime)),"%b %d, %y")) %>%
-  ungroup()
-
-df_access = tidy.daily %>% 
-  filter(level%in%c("L1")) %>% 
-  filter(rate=='count') %>% 
-  filter(type == "cases") %>% 
-  select(level, country, type, date) %>% 
-  distinct() %>% 
-  left_join(details) %>% 
-  group_by(country, level, type) %>% 
-  group_modify(~{
-    max_date_tmp = .x %>% pull(date) %>% max() %>% format("%b %d, %y")
-    min_date_tmp = .x %>% pull(date) %>% min() %>% format("%b %d, %y")
-    n_tmp = nrow(.x)
-    ref_n_days =  as.integer(Sys.Date()-mdy("03-30-2020"))
-    .x %>% 
-      select(-date) %>% 
-      distinct() %>% 
-      mutate(access_date = ifelse(n_tmp>ref_n_days,
-                                  paste0(date_access2),
-                                  "Error: Missing Days" ) )
-  }) %>% 
-  ungroup() %>% 
-  arrange(country) %>% 
-  select(Step = country,access_date)
-
-
-
-#### ___12.2 -  Save Error Log   ####
-df_update_status = tibble(Step = c("Country (JHU)","Brazil","Mexico","Chile",
-                            "Colombia","Peru", "Guatemala","Argentina",
-                            "Compile","Save")) %>% 
-  mutate(Status = c(try_country, try_BR,try_MX,try_CL,
-                    try_CO,try_PE,try_GT,try_AR,
-                    try_compile,try_save)) %>% 
-  left_join(df_access) %>% 
-  mutate(access_date = ifelse(Step%in%c("Country (JHU)","Compile","Save"),
-                              format( Sys.Date() ,"%b %d, %y"),
-                              access_date)) %>% 
-  rename(`Access Date`= access_date)
-save(df_update_status,file = "../Clean/status_log.rdata")
-#### ___12.3 -  Save Image   ####
-save.image(file = "../../SALURBAL Covid19 Files/tmp_files/work_space.RData")
-print("Okay")
-
+  
+  

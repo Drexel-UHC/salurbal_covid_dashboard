@@ -1,79 +1,118 @@
-setwd("C:/Users/ranli/Desktop/Git local/SALURBAL Covid19 Git Internal/Data")
-source("code_salurbal_data_updater_util.R")
 
 salurbal_covid19_update = function(){
-  ## Clean Data
+  
+  ## 0. Clean data -----
+  rm(list = ls())
+  setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data")
+  
+  ## 1. Clean data -----
   task1 = try (source("code_salurbal_data_updater.R")) %>% as.character()
   
-  # Push if no Error then Push
-  load("../Clean/status_log.rdata")
-  if ( (!any(str_detect(c(task1,df_update_status$Status), "Error")))&
-       (format(Sys.time(),"%H")>=22)
-       
-       ) {
-    git2r::config(user.name = "rl627",user.email = "rl627@drexel.edu")
-    git2r::config()
-    gitstatus()
-    gitadd()
-    gitcommit()
-    gitpush()
+  
+  ## 2. Save Files -----
+  if (str_detect(getwd(),"Dev")){
+    print("Step 2: Save to Dev")
+    ### Save Static
+    save(
+      countries_salurbal,other_central_countries,other_south_countries,
+      other_carribean_countries,other_lac_countries,lac_countries,minc,mind,
+      countries_references,countries_interest,col_rolling,
+      country_coords,
+      sf_world,salurbal_l1_sf,sf_salurbal_0.8,  
+      xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
+      tidy.data.all.old,
+      file = "../App (Development)/covid19_processed_data_static.rdata")
+    ### Save Dynamic
+    save(
+      df_map_data,map_global_totals,subset_dates_tmp,
+      choices_df,
+      tidy.data.all.new,
+      file = "../App (Development)/covid19_processed_data_dynamic.rdata")
+  } else {
+    print("Step 2: Save to Clean")
+    ### Save Data
+    save(
+      countries_salurbal,other_central_countries,other_south_countries,
+      other_carribean_countries,other_lac_countries,lac_countries,minc,mind,
+      countries_references,countries_interest,col_rolling,
+      country_coords,
+      sf_world,salurbal_l1_sf,sf_salurbal_0.8,  
+      xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
+      tidy.data.all.old,
+      file = "../Clean/covid19_processed_data_static.rdata")
+    save(
+      df_map_data,map_global_totals,subset_dates_tmp,
+      choices_df,
+      tidy.data.all.new,
+      file = "../Clean/covid19_processed_data_dynamic.rdata")
     
+    ### Push if no error and after 10PM
+    if ( (!any(str_detect(c(task1,df_update_status$Status), "Error")))&
+         (format(Sys.time(),"%H")>=22) ) {
+      print("Step 2: Push to GitHub")
+      git2r::config(user.name = "rl627",user.email = "rl627@drexel.edu")
+      git2r::config()
+      gitstatus()
+      gitadd()
+      gitcommit()
+      gitpush()}
   }
   
-  
-  ## Get Status Log 
-  library(tableHTML)
-  library (RDCOMClient)
-  error_rows = df_update_status %>%
-    mutate(n = row_number()) %>%
-    filter(str_detect(Status, "Error")) %>%
-    pull(n)
-  html_table_tmp = df_update_status  %>%
-    tableHTML(rownames = F,
-              widths = c(150,150,150)) %>%
-    add_css_row(css = list('color', 'red'), rows =error_rows+1)
-  ## Write Email
-  subject_tmp = ifelse(any(str_detect(df_update_status$Status,"Error")),
-                       paste0("SALURBAL COVID Data Update ",
-                              Sys.Date() %>% format("%b %d, %Y"),
-                              "; ERROR in pipeline"),
-                       paste0("SALURBAL COVID Data Update ",
-                              Sys.Date() %>% format("%b %d, %Y"))
-  )
-  body_tmp  = ifelse(any(str_detect(df_update_status$Status,"Error")),
-                     str_c(
-                       "Hi SALURBAL COVID-19 Team,<br/><br/>",
-                       "This is a biweekly automated email to keep track of our data updates. There was an error in the daily update process which scheduled at ",
-                       Sys.time() %>% format("%I:%M %p %b %d, %Y."),
-                       " Please see the table below for details.<br/><br/>",
-                       html_table_tmp,
-                       "<br/><br/>Thanks,<br/>Ran"
-                     ),
-                     str_c(
-                       "Hi SALURBAL COVID-19 Team,<br/><br/>",
-                       "This is a biweekly automated email to keep track of our data updates.
+  ## 3. Send Email ----
+  { library(tableHTML)
+    library (RDCOMClient)
+    error_rows = df_update_status %>%
+      mutate(n = row_number()) %>%
+      filter(str_detect(Status, "Error")) %>%
+      pull(n)
+    html_table_tmp = df_update_status  %>%
+      tableHTML(rownames = F,
+                widths = c(150,150,150)) %>%
+      add_css_row(css = list('color', 'red'), rows =error_rows+1)
+    ## Write Email
+    subject_tmp = ifelse(any(str_detect(df_update_status$Status,"Error")),
+                         paste0("SALURBAL COVID Data Update ",
+                                Sys.Date() %>% format("%b %d, %Y"),
+                                "; ERROR in pipeline"),
+                         paste0("SALURBAL COVID Data Update ",
+                                Sys.Date() %>% format("%b %d, %Y"))
+    )
+    body_tmp  = ifelse(any(str_detect(df_update_status$Status,"Error")),
+                       str_c(
+                         "Hi SALURBAL COVID-19 Team,<br/><br/>",
+                         "This is a biweekly automated email to keep track of our data updates. There was an error in the daily update process which scheduled at ",
+                         Sys.time() %>% format("%I:%M %p %b %d, %Y."),
+                         " Please see the table below for details.<br/><br/>",
+                         html_table_tmp,
+                         "<br/><br/>Thanks,<br/>Ran"
+                       ),
+                       str_c(
+                         "Hi SALURBAL COVID-19 Team,<br/><br/>",
+                         "This is a biweekly automated email to keep track of our data updates.
                        Please see the table below for details about the data update for ",
-                       Sys.time() %>% format("%I:%M %p %b %d, %Y."),
-                       "<br/><br/>",
-                       html_table_tmp,
-                       "<br/><br/>Thanks,<br/>Ran"
-                     )
-  )
-  ## Send email (Daily to self and Weekly to group)
-  library (RDCOMClient)
-  Outlook <- COMCreate("Outlook.Application")
-  Email = Outlook$CreateItem(0)
-  Email[["to"]] = ifelse((format(Sys.Date(),"%a")%in%c("Wed"))&
-                           (format(Sys.time(),"%H")>=22)&
-                           (!str_detect(getwd(),"Development") ),
-                         "rl627@drexel.edu;ub45@drexel.edu;jlk465@drexel.edu;",
-                         "rl627@drexel.edu") 
-  Email[["cc"]] = ""
-  Email[["bcc"]] = ""
-  Email[["subject"]] = subject_tmp
-  Email[["htmlbody"]] = body_tmp
-  Email$Send()
-  rm(Outlook, Email)
+                         Sys.time() %>% format("%I:%M %p %b %d, %Y."),
+                         "<br/><br/>",
+                         html_table_tmp,
+                         "<br/><br/>Thanks,<br/>Ran"
+                       )
+    )
+    ## Send email (Daily to self and Weekly to group)
+    library (RDCOMClient)
+    Outlook <- COMCreate("Outlook.Application")
+    Email = Outlook$CreateItem(0)
+    Email[["to"]] = ifelse((format(Sys.Date(),"%a")%in%c("Wed"))&
+                             (format(Sys.time(),"%H")>=22)&
+                             (!str_detect(getwd(),"Development") ),
+                           "rl627@drexel.edu;ub45@drexel.edu;jlk465@drexel.edu;",
+                           "rl627@drexel.edu") 
+    Email[["cc"]] = ""
+    Email[["bcc"]] = ""
+    Email[["subject"]] = subject_tmp
+    Email[["htmlbody"]] = body_tmp
+    Email$Send()
+    rm(Outlook, Email)
+  }
+  
 }
 
 salurbal_covid19_update()
