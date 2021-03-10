@@ -35,7 +35,7 @@ load("covid19_processed_data_static.rdata")
 ## Production Setup
 req = content(
   GET(
-    url = "https://api.github.com/repos/Shiny-Ran/salurbal_covid19_internal/contents/Clean/covid19_processed_data_dynamic.rdata",
+    url = "https://api.github.com/repos/Drexel-UHC/salurbal_covid_dashboard/contents/Clean/covid19_processed_data_dynamic.rdata",
     authenticate("rl627@drexel.edu", "f72a8b5c5984910d715e1358e917ab74799a74ce")
   ),
   as = "parsed")
