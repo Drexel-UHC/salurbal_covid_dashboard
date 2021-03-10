@@ -33,6 +33,7 @@ load("covid19_processed_data_static.rdata")
 # load("../../SALURBAL Covid19 Git Internal/Clean/covid19_processed_data_dynamic.rdata")
 
 ## Production Setup
+print("start download")
 req = content(
   GET(
     url = "https://api.github.com/repos/Drexel-UHC/salurbal_covid_dashboard/contents/Clean/covid19_processed_data_dynamic.rdata",
@@ -44,7 +45,6 @@ GET(req$download_url,
 load("tmp_covid.rdata")
 
 
-source("util.R",local = TRUE)
 source("global.R",local = TRUE)
 
 tidy.data.all = bind_rows(tidy.data.all.old,tidy.data.all.new) %>% 

@@ -55,7 +55,8 @@ salurbal_covid19_update = function(){
       gitstatus()
       gitadd()
       gitcommit()
-      gitpush()}
+      gitpush()
+      }
   }
   
   ## 3. Send Email ----

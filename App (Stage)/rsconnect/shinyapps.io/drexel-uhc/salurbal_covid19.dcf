@@ -5,8 +5,8 @@ account: drexel-uhc
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2212116
-bundleId: 4327217
+bundleId: 4327973
 url: https://drexel-uhc.shinyapps.io/salurbal_covid19/
-when: 1615398503.45122
+when: 1615413266.15609
 asMultiple: FALSE
 asStatic: FALSE
