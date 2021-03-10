@@ -1,0 +1,115 @@
+#intro_modal_p1 {
+  text-align: center;
+}
+
+input[type="number"] {
+  max-width: 80%;
+}
+
+div.outer {
+  position: relative;
+  top: 0;
+  left: 0;
+  height: 600px;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Customize fonts */
+body, label, input, button, select { 
+  font-family: 'Helvetica Neue', Helvetica;
+  font-weight: 200;
+}
+h1, h2, h3, h4 { font-weight: 400; }
+
+#controls {
+  /* Appearance */
+  background-color: white;
+  position: absolute;
+  padding: 0  10px 10px 10px;
+  cursor: move;
+  /* Fade out while not hovering */
+  opacity:0.7;
+  zoom: 0.9;
+  transition: opacity 500ms 0.1s;
+}
+
+#controls:hover {
+  /* Fade in while hovering */
+  opacity:1;
+  transition-delay: 0;
+}
+/* */
+.header-logo {
+  padding-left: 30px;
+}
+
+.header-brand {
+  font-family: 'Source Sans Pro';
+  color:#303C51;
+  text-align: right;
+  font-size: 28px;
+  font-weight: 1000;
+  height: 100px;
+  padding:45px;
+ }
+
+.navbar { 
+  background-color:  #00BB9E;
+  color: #ffffff;
+  font-family: 'Helvetica Neue', Helvetica;
+  font-weight: 600;  
+  border-radius: 10px;
+}
+
+
+
+/*Navbar Brand
+.navbar-default .navbar-brand {
+    color: #ffffff;
+    font-size: 20px; 
+  }
+  .navbar-default .navbar-brand:hover {
+    color: #ffffff;
+    font-size: 20px; 
+  }
+*/
+
+ 
+
+.navbar-brand {
+  display:none;
+}
+
+  /*Navbar Items*/
+  .navbar-default .navbar-nav > li > a {
+    color: #ffffff;
+    background-color: #00BB9E;
+    font-size: 15px; 
+  }
+  .navbar-default .navbar-nav > li > a:hover{
+    color: #00BB9E;
+    background-color: #303C51;
+    font-size: 15px; 
+  }
+  .navbar-default .navbar-nav > .active > a {
+    color: #303C51;
+    background-color: #00BB9E;
+    font-size: 15px; 
+  }  a:focus
+  .navbar-default .navbar-nav > .active > a:hover{
+    color: #303C51;
+    background-color: #00BB9E;
+    font-size: 15px; 
+  }  .navbar-default .navbar-nav > .active >  a:focus{
+    color: #303C51;
+    background-color: #00BB9E;
+    font-size: 15px; 
+  }
+
+  /*Foot details*/
+  .salurbal_hr {
+    border-top: 1px dashed #00BB9E;
+  }

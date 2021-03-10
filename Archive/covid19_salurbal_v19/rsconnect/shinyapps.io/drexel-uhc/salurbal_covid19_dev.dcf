@@ -1,0 +1,12 @@
+name: salurbal_covid19_dev
+title: salurbal_covid19_dev
+username:
+account: drexel-uhc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2813424
+bundleId: 3632066
+url: https://drexel-uhc.shinyapps.io/salurbal_covid19_dev/
+when: 1600187014.15802
+asMultiple: FALSE
+asStatic: FALSE

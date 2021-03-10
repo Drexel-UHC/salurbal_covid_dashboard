@@ -1,0 +1,76 @@
+---
+title: "Buenos Aires Data Q.C."
+author: "Alina"
+date: "9/28/2020"
+output: 
+  html_document:
+      toc: true
+      toc_float: true
+      df_print: paged
+      code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+library(tidyverse)
+library(lubridate)
+library(stringr)
+library(stringi)
+library(readxl)
+library(janitor)
+library(data.table)
+library(sas7bdat)
+load("BA_QC_data.rdata")
+```
+
+
+## Data Check at L1 level for Beunos Aires
+
+```{r}
+df_BA %>%
+  ggplot(aes(date, confirmed, col = version))+
+  geom_line()+
+  labs(title = "Differences in Old (60% missing in CABA) vs New (Data direct from City) over time")
+
+
+df_BA %>% 
+  filter(date == max(date)) %>% 
+  select(version, date, confirmed) %>% 
+  pivot_wider(names_from = "version", 
+              values_from = "confirmed") %>% 
+  mutate(rel_change =round( ((new-old)/old )*100 ,2) ) 
+  
+```
+
+**Cumulative relative change: New Data has 17.5% more cases for Beunos Aires**
+
+## Data Check at L2 level for Beunos Aires
+
+```{r}
+df_l2 = df_BA_L2 %>% 
+  filter(date == max(date)) %>% 
+  select(version,salid2,loc, date, confirmed) %>% 
+  pivot_wider(names_from = "version", 
+              values_from = "confirmed") %>% 
+  arrange()%>% 
+  mutate(rel_change = round( ((new-old)/old )*100 ,2) ) %>% 
+  arrange(desc(rel_change))
+df_l2
+
+```
+
+
+```{r}
+p = df_l2%>% 
+  ggplot(aes(old, new, group = salid2, text =loc))+
+  geom_point()
+library(plotly)
+ggplotly(p)
+```
+

@@ -1,0 +1,12 @@
+name: covid19_salurbal_scr
+title: covid19_salurbal_scr
+username:
+account: rl627
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2088229
+bundleId: 2992588
+url: https://rl627.shinyapps.io/covid19_salurbal_scr/
+when: 1586445840.32688
+asMultiple: FALSE
+asStatic: FALSE

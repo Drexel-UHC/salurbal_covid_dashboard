@@ -1,0 +1,12 @@
+name: salurbal_covid19
+title: salurbal_covid19
+username:
+account: drexel-uhc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2212116
+bundleId: 3109208
+url: https://drexel-uhc.shinyapps.io/salurbal_covid19/
+when: 1588737536.86221
+asMultiple: FALSE
+asStatic: FALSE

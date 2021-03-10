@@ -1,0 +1,13 @@
+name: salurbal_covid19_stage
+title: salurbal_covid19_stage
+username:
+account: drexel-uhc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2212081
+bundleId: 3257002
+url: https://drexel-uhc.shinyapps.io/salurbal_covid19_stage/
+when: 1591881479.82728
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: covid19app-cache
