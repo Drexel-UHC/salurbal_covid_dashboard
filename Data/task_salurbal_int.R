@@ -1,12 +1,14 @@
 
 salurbal_covid19_update = function(){
   
-  ## 0. Clean data -----
+  ## 0. Setup -----
   rm(list = ls())
   setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data")
+  source("code_salurbal_data_updater_util.R")
+  
   
   ## 1. Clean data -----
-  task1 = try (source("code_salurbal_data_updater.R")) %>% as.character()
+  task1 = try ({ source("code_salurbal_data_updater.R")}) %>% as.character()
   
   
   ## 2. Save Files -----
