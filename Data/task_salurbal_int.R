@@ -50,7 +50,8 @@ salurbal_covid19_update = function(){
     
     ### Push if no error and after 10PM
     if ( (!any(str_detect(c(task1,df_update_status$Status), "Error")))&
-         (format(Sys.time(),"%H")>=22) ) {
+         (format(Sys.time(),"%H")>=22)&
+         (file.size("../Clean/covid19_processed_data_dynamic.rdata")<970000)) {
       print("Step 2: Push to GitHub")
       git2r::config(user.name = "rl627",user.email = "rl627@drexel.edu")
       git2r::config()
