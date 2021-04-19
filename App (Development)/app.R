@@ -1,74 +1,82 @@
-rm(list=ls())
-library(httr)
-library(rintrojs)
-library(cowplot)
-library(shiny)
-library(waiter)
-library(sf)
-library(highcharter)
-library(leaflet)
-library(shinyWidgets)
-library(shinydashboard)
-library(shinythemes)
-library(janitor)
-library(scales)
-library(gridExtra)
-library(DT)
-library(sparkline)
-library(stringr)
-library(lubridate)
-library(ggrepel)
-library(ggplot2)
-library(dplyr)
-options(scipen = 99)
-load("sf_salurbal_0.8.rdata")
-load("sf_l2_simp.rdata")
-load("covid19_processed_data_static.rdata")
+{
+  
+  rm(list=ls())
+  library(httr)
+  library(rintrojs)
+  library(cowplot)
+  library(shiny)
+  library(waiter)
+  library(sf)
+  library(highcharter)
+  library(leaflet)
+  library(shinyWidgets)
+  library(shinydashboard)
+  library(shinythemes)
+  library(janitor)
+  library(scales)
+  library(gridExtra)
+  library(DT)
+  library(sparkline)
+  library(stringr)
+  library(lubridate)
+  library(ggrepel)
+  library(ggplot2)
+  library(dplyr)
+  options(scipen = 99)
+  load("sf_salurbal_0.8.rdata")
+  load("sf_l2_simp.rdata")
+  load("covid19_processed_data_static.rdata")
+  
+  
+  ## Development Setup
+  # load("covid19_processed_data_dynamic.rdata")
+  
+  ## Stage Set up
+  # load("../../SALURBAL Covid19 Git Internal/Clean/covid19_processed_data_dynamic.rdata")
+  
+  ## Production Setup
+  print("start download")
+  req = content(
+    GET(
+      url = "https://api.github.com/repos/Drexel-UHC/salurbal_covid_dashboard/contents/Clean/covid19_processed_data_dynamic.rdata",
+      authenticate("rl627@drexel.edu", "f72a8b5c5984910d715e1358e917ab74799a74ce")
+    ),
+    as = "parsed")
+  GET(req$download_url,
+      write_disk(path = "tmp_covid.rdata", overwrite = T))
+  load("tmp_covid.rdata")
+  
+  ### Operationalize data
+  map_dates_all = df_map_data %>% 
+    filter(level =="L1") %>%     
+    count(date) %>% 
+    filter(date > ymd("2020-03-23")) %>% 
+    pull(date)
+  source("global.R",local = TRUE)
+  tidy.data.all = bind_rows(tidy.data.all.old,tidy.data.all.new) %>% 
+    mutate(date = as.Date(date, origin = "1970-01-01")) %>% 
+    arrange(level, country, loc, type_rate,date) 
+  tidy.daily = tidy.data.all  %>% 
+    # filter(cum_value >0) %>% 
+    # select(-cum_value)  %>%
+    rename(value = daily_value) %>% 
+    left_join(xwalk_data_rate) %>% 
+    left_join(xwalk_data_rate_cleaned) %>% 
+    left_join(xwalk_data_titles, 
+              by = c("level", "country", 
+                     "type", "rate")) %>% 
+    left_join(xwalk_salid )
+  tidy.cumulative = tidy.data.all  %>% 
+    rename(n = cum_value)%>% 
+    left_join(xwalk_data_rate) %>% 
+    left_join(xwalk_data_cum_rate_cleaned) %>% 
+    left_join(xwalk_salid )
 
 
-## Development Setup
-# load("covid19_processed_data_dynamic.rdata")
-
-## Stage Set up
-# load("../../SALURBAL Covid19 Git Internal/Clean/covid19_processed_data_dynamic.rdata")
-
-## Production Setup
-print("start download")
-req = content(
-  GET(
-    url = "https://api.github.com/repos/Drexel-UHC/salurbal_covid_dashboard/contents/Clean/covid19_processed_data_dynamic.rdata",
-    authenticate("rl627@drexel.edu", "f72a8b5c5984910d715e1358e917ab74799a74ce")
-  ),
-  as = "parsed")
-GET(req$download_url,
-    write_disk(path = "tmp_covid.rdata", overwrite = T))
-load("tmp_covid.rdata")
+  rm(tidy.data.all.old,tidy.data.all.new,tidy.data.all)
+}
 
 
-source("global.R",local = TRUE)
-
-tidy.data.all = bind_rows(tidy.data.all.old,tidy.data.all.new) %>% 
-  mutate(date = as.Date(date, origin = "1970-01-01")) %>% 
-  arrange(level, country, loc, type_rate,date) 
-
-tidy.daily = tidy.data.all  %>% 
-  # filter(cum_value >0) %>% 
-  # select(-cum_value)  %>%
-  rename(value = daily_value) %>% 
-  left_join(xwalk_data_rate) %>% 
-  left_join(xwalk_data_rate_cleaned) %>% 
-  left_join(xwalk_data_titles, 
-            by = c("level", "country", 
-                   "type", "rate")) %>% 
-  left_join(xwalk_salid )
-
-tidy.cumulative = tidy.data.all  %>% 
-  rename(n = cum_value)%>% 
-  left_join(xwalk_data_rate) %>% 
-  left_join(xwalk_data_cum_rate_cleaned) %>% 
-  left_join(xwalk_salid )
-
-rm(tidy.data.all.old,tidy.data.all.new,tidy.data.all)
 
 
 
@@ -605,14 +613,23 @@ server <- function(input, output) {
   #### (Reactive) ####
   
   map_daily_data_react = reactive({
-    df_tmp = df_map_data %>% 
-      filter(level ==input$map_level) %>% 
-      filter(date == input$plot_date) %>% 
-      filter(rate == input$type_map) 
+    type_map_tmp = "confirmed_rate"
+    plot_date_tmp =  max(map_dates_all)
+    map_countries_tmp = c( "Brazil"   , "Chile" )
     
-    if ((input$map_level == "L1")&(input$type_map%in%c("confirmed_rate","deaths_rate"))){
-      df_tmp %>%
-        filter(country%in%input$map_countries)
+    type_map_tmp = input$type_map
+    plot_date_tmp = input$plot_date
+    map_countries_tmp = input$map_countries
+    
+    df_tmp = df_map_data %>% 
+      filter(level =="L1") %>% 
+      filter(date == plot_date_tmp) %>% 
+      filter(rate == type_map_tmp) 
+    
+    if (type_map_tmp%in%c("confirmed_rate","deaths_rate")){
+      df_tmp = df_tmp %>%
+        filter(country%in%map_countries_tmp)
+      df_tmp
     }
     else {df_tmp}
     
@@ -620,38 +637,71 @@ server <- function(input, output) {
   
   current_global_cases_react = reactive({map_global_totals %>% filter(date == input$plot_date) %>% pull(confirmed)})
   current_global_deaths_react = reactive({map_global_totals %>% filter(date == input$plot_date) %>% pull(deaths)})
-  
-  
+ 
+   #### (UI) ####
+  output$map_country_filter = renderUI({
+    type_map_tmp = input$type_map 
+      # input = list(); input$type_map = "confirmed_rate"
+     if (str_detect(type_map_tmp,"rate")){
+       countries_tmp = df_map_data %>% 
+         filter(level == "L1") %>% 
+         filter(rate == type_map_tmp) %>% 
+         pull(country) %>% 
+         unique()
+       
+       pickerInput(
+         inputId = "map_countries",
+         label = "Fitler Countries:", 
+         choices = countries_tmp,
+         options = list(
+           `actions-box` = TRUE), 
+         selected = countries_tmp,
+         multiple = T
+       )
+     }
+    
+  })
   #### (Output) ####
   output$map_text_date = renderText(map_daily_data_react() %>% slice(1) %>% pull(date_label))
   output$current_global_cases = renderText( paste("Total Global Cases:\n",format(current_global_cases_react(),big.mark=",") ))
   output$current_global_deaths = renderText( paste("Total Global Deaths:\n",format(current_global_deaths_react(),big.mark=",") ))
   
-  output$map_country_filter = renderUI({
-    if (input$map_level == "L1"&(input$type_map%in%c("confirmed_rate","deaths_rate"))){
-      # input = list(); input$type_map = "confirmed_rate"
-      countries_tmp = df_map_data %>% 
-        filter(level == "L1") %>% 
-        filter(rate == input$type_map) %>% 
-        pull(country) %>% 
-        unique()
-      
-      pickerInput(
-        inputId = "map_countries",
-        label = "Fitler Countries:", 
-        choices = countries_tmp,
-        options = list(
-          `actions-box` = TRUE), 
-        selected = countries_tmp,
-        multiple = T
-      )
-    }
-  })
+  
   # output$mapper = renderLeaflet({
   #   basemap 
   # })
   
   output$mapper = renderLeaflet({
+    {
+      ## Initial Data
+      type_map_tmp = "confirmed_rate"
+      plot_date_tmp =  max(map_dates_all)
+      map_countries_tmp = c("Mexico","Brazil","Chile", "Colombia" , "Peru",  "Argentina", "Guatemala" )
+      df_tmp = df_map_data %>% 
+        filter(level =="L1") %>% 
+        filter(date == plot_date_tmp) %>% 
+        filter(rate == type_map_tmp) 
+      if (type_map_tmp%in%c("confirmed_rate","deaths_rate")){
+        df_tmp = df_tmp %>%
+          filter(country%in%map_countries_tmp)}
+      legend_tmp =  case_when(type_map_tmp == "confirmed_rate"~"Cases per 1M",
+                              type_map_tmp == "deaths_rate"~"Deaths per 10M")
+      hex_sf_tmp = sf_salurbal_0.8 %>% 
+        left_join(df_tmp, by = "salid1") %>% 
+        mutate(opacity = ifelse(is.na(n),0,1)) %>% 
+        select(name,opacity,n,salid1  ) 
+      l1_sf_tmp = salurbal_l1_sf %>% 
+        left_join(df_tmp, by = "salid1") %>% 
+        mutate(opacity = ifelse(is.na(n),0,1)) %>% 
+        select(name,opacity,n ,salid1 )
+      
+      pal = colorNumeric("OrRd",
+                         domain = hex_sf_tmp$n, 
+                         reverse = F)
+    }
+   
+
+    ## Initial basemap
     basemap = leaflet(options = leafletOptions(preferCanvas = TRUE,
                                                zoomControl = FALSE)) %>% 
       # addTiles() %>% 
@@ -661,7 +711,42 @@ server <- function(input, output) {
                   weight = 1, 
                   color = I("black"),
                   fillOpacity = 0,
-                  label = ~loc)
+                  label = ~loc)%>%
+      # basemap%>%
+      clearMarkers()%>% 
+      leaflet::clearGroup("rateStuffCountry")%>%
+      clearControls() %>%
+      addMapPane("Hexagons", zIndex = 420) %>% # below
+      addMapPane("Polygons", zIndex = 430) %>% # above
+      addPolygons(data = hex_sf_tmp,
+                  weight = 1, 
+                  fillOpacity = ~opacity,
+                  label = ~paste(name,":",format(n,big.mark=",")),
+                  color = I("black"),
+                  fillColor  = ~pal(n),
+                  options = pathOptions(pane = "Hexagons"),
+                  group = "Hexagons", 
+                  layerId = paste0("a",1:371)) %>%
+      addPolygons(data = l1_sf_tmp,
+                  weight = 1, 
+                  fillOpacity = ~opacity,
+                  label = ~paste(name,":",format(n,big.mark=",")),
+                  color = I("black"),
+                  fillColor  =  ~pal(n),
+                  options = pathOptions(pane = "Polygons"),
+                  group = "Polygons", 
+                  layerId = paste0("b",1:371)) %>%
+      addLegend(data = hex_sf_tmp %>% filter(!is.na(n)),
+                position = "topright",
+                pal = pal,
+                values = ~n,
+                title = legend_tmp,
+                opacity = 1) %>% 
+      addLayersControl(
+        overlayGroups = c("Polygons","Hexagons"),
+        options = layersControlOptions(collapsed = FALSE)
+      ) %>% 
+      hideGroup("Polygons")
     basemap
   })
   
@@ -671,11 +756,13 @@ server <- function(input, output) {
     #   filter(date == max(subset_dates_tmp)) %>%
     #   filter(rate == "deaths_rate") %>%
     #   filter(country%in%c("Brazil"))
+    type_map_tmp = "confirmed_rate"
+    type_map_tmp = input$type_map
     
     df_tmp =  map_daily_data_react()
-    legend_tmp =  case_when(input$type_map == "confirmed_rate"~"New Cases per 1M",
-                            input$type_map == "deaths_rate"~"New Deaths per 10M")
-    if (input$type_map%in%c("confirmed","deaths") ){
+    legend_tmp =  case_when(type_map_tmp == "confirmed_rate"~"New Cases per 1M",
+                            type_map_tmp == "deaths_rate"~"New Deaths per 10M")
+    if (type_map_tmp%in%c("confirmed","deaths") ){
       
       leafletProxy("mapper") %>%
         clearMarkers() %>% 
@@ -689,37 +776,9 @@ server <- function(input, output) {
                          fillOpacity = 0.4,
                          color = "red", weight = 0)
     }
-    else if (input$map_level == "country"&(str_detect(input$type_map,"rate")) ){
-      legend_tmp =  case_when(input$type_map == "confirmed_rate"~"Cases per 1M",
-                              input$type_map == "deaths_rate"~"Deaths per 10M")
-      sf_tmp = sf_world %>% 
-        left_join(df_tmp)  %>% 
-        mutate(fill = ifelse(is.na(fill),"#d3d3d3",fill))
-      pal = colorNumeric("OrRd",
-                         domain = sf_tmp$n, 
-                         reverse = F)
-      leafletProxy("mapper") %>%
-        clearMarkers()%>% 
-        leaflet::clearGroup("Hexagons")%>%
-        leaflet::clearGroup("Polygons")%>%
-        clearControls() %>% 
-        addPolygons(data = sf_tmp,
-                    weight = 1, 
-                    fillOpacity = 1,
-                    label = ~paste(loc,":",format(n,big.mark=",")),
-                    color = I("black"),
-                    fillColor  = ~fill,
-                    group = "rateStuffCountry") %>%
-        addLegend(data = sf_tmp %>% filter(!is.na(n)),
-                  position = "topright",
-                  pal = pal,
-                  values = ~n,
-                  title = legend_tmp,
-                  opacity = 1)  
-    }
-    else if (input$map_level == "L1"&(str_detect(input$type_map,"rate")) ){
-      legend_tmp =  case_when(input$type_map == "confirmed_rate"~"Cases per 1M",
-                              input$type_map == "deaths_rate"~"Deaths per 10M")
+    else {
+      legend_tmp =  case_when(type_map_tmp == "confirmed_rate"~"Cases per 1M",
+                              type_map_tmp == "deaths_rate"~"Deaths per 10M")
       
       hex_sf_tmp = sf_salurbal_0.8 %>% 
         left_join(df_tmp, by = "salid1") %>% 
