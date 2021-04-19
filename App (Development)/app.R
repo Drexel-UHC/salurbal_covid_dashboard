@@ -768,6 +768,7 @@ server <- function(input, output) {
         clearMarkers() %>% 
         leaflet::clearGroup("rateStuffCountry")%>%
         leaflet::clearGroup("Hexagons")%>%
+        leaflet::clearGroup("Polygons")%>%
         clearControls()%>%
         addCircleMarkers(data = df_tmp, 
                          lat = ~lat, lng = ~lng, 
