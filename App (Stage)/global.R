@@ -134,20 +134,14 @@ ui <- fluidPage(#theme = shinytheme("flatly"),
                                                         "Deaths per 10M"="deaths_rate"),
                                             selected = "confirmed_rate"
                                           ),
-                                          pickerInput(
-                                            "map_level",
-                                            label = "Map Level",
-                                            choices = c("Country Level"="country",
-                                                        "City" = "L1")
-                                            
-                                          ),
+                                      
                                           uiOutput("map_country_filter"),
                                           sliderInput("plot_date",
                                                       label = h5("Select mapping date"),
-                                                      min = min(subset_dates_tmp),
-                                                      max = max(subset_dates_tmp),
+                                                      min = min(map_dates_all),
+                                                      max = max(map_dates_all),
                                                       step  = 30,
-                                                      value = max(subset_dates_tmp),
+                                                      value = max(map_dates_all),
                                                       timeFormat = "%d %b", 
                                                       animate=animationOptions(interval =500, loop = FALSE) ) #
                             )

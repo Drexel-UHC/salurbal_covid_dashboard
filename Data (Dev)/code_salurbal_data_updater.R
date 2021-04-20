@@ -1,6 +1,7 @@
 rm(list=ls())
 options(timeout=14400)
 source("code_salurbal_data_updater_util.R")
+cutoff_date = "04-15-2021"
 
 # load("tmp_files/work_space.RData")
 
@@ -2552,7 +2553,6 @@ try_compile = try({
     distinct()
   
   ### Subset to old (Before Cutoff) and new (Cutoff and after); Cutoff: Dec 15, 2020
-  cutoff_date = "03-01-2021"
   tidy.data.all.old = tidy.data.all %>% 
     filter(date<as.integer(mdy(cutoff_date)))
   

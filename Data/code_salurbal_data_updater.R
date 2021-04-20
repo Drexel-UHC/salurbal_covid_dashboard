@@ -24,7 +24,7 @@ try_country = try({
   deaths_file = clean_cum_csse(raw_deaths,"deaths")
   
   country_max_date = max(counts_file$date)
-  country_min_date = mdy("03-15-2020")
+  country_min_date = mdy("04-15-2020")
   country_dates = seq(country_min_date,country_max_date, by ='day')
   counts  = tibble(loc = list(counts_file$loc %>% unique()),
                    date =country_dates) %>% 

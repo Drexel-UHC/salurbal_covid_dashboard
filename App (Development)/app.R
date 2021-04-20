@@ -29,22 +29,22 @@
   
   
   ## Development Setup
-  # load("covid19_processed_data_dynamic.rdata")
+  load("covid19_processed_data_dynamic.rdata")
   
   ## Stage Set up
   # load("../../SALURBAL Covid19 Git Internal/Clean/covid19_processed_data_dynamic.rdata")
   
   ## Production Setup
-  print("start download")
-  req = content(
-    GET(
-      url = "https://api.github.com/repos/Drexel-UHC/salurbal_covid_dashboard/contents/Clean/covid19_processed_data_dynamic.rdata",
-      authenticate("rl627@drexel.edu", "f72a8b5c5984910d715e1358e917ab74799a74ce")
-    ),
-    as = "parsed")
-  GET(req$download_url,
-      write_disk(path = "tmp_covid.rdata", overwrite = T))
-  load("tmp_covid.rdata")
+  # print("start download")
+  # req = content(
+  #   GET(
+  #     url = "https://api.github.com/repos/Drexel-UHC/salurbal_covid_dashboard/contents/Clean/covid19_processed_data_dynamic.rdata",
+  #     authenticate("rl627@drexel.edu", "f72a8b5c5984910d715e1358e917ab74799a74ce")
+  #   ),
+  #   as = "parsed")
+  # GET(req$download_url,
+  #     write_disk(path = "tmp_covid.rdata", overwrite = T))
+  # load("tmp_covid.rdata")
   
   ### Operationalize data
   map_dates_all = df_map_data %>% 
