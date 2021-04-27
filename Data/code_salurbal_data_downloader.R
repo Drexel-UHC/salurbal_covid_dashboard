@@ -7,15 +7,15 @@ source("code_salurbal_data_updater_util.R")
 
 #### ********************************************* ####
 # 1. Download files  ------- 
-# ## Guatemala
+## Guatemala
 # "Confirmados po municipio fecha de emision "
-# url_cases = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_cb6f7ea3/session/574c24d85e06b5b6fdcdf6ca4d9ac855/download/confirmadosFER?w=cb6f7ea3"
+# url_cases = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_3fa75ca6/session/2977ea30e7dbb4a6d6cf95b489572163/download/confirmadosFER?w=3fa75ca6"
 # download.file(url_cases,destfile = "../../SALURBAL Covid19 Files/tmp_files/gt_cases_tmp.csv")
 # "tamizados  por municipio"
-# url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_cb6f7ea3/session/574c24d85e06b5b6fdcdf6ca4d9ac855/download/tamizadosFER?w=cb6f7ea3"
+# url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_3fa75ca6/session/2977ea30e7dbb4a6d6cf95b489572163/download/tamizadosFER?w=3fa75ca6"
 # download.file(url_deaths,destfile = "../../SALURBAL Covid19 Files/tmp_files/gt_tests_tmp.csv")
 # "Fallecidos por municipio"
-# url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_cb6f7ea3/session/574c24d85e06b5b6fdcdf6ca4d9ac855/download/fallecidosFF?w=cb6f7ea3"
+# url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_3fa75ca6/session/2977ea30e7dbb4a6d6cf95b489572163/download/fallecidosFF?w=3fa75ca6"
 # download.file(url_deaths,destfile = "../../SALURBAL Covid19 Files/tmp_files/gt_deaths_tmp.csv")
 
 ## Brazil
@@ -65,4 +65,6 @@ download.file(url_ar_testing, destfile = "../../SALURBAL Covid19 Files/tmp_files
 library(zip)
 files_to_zip = list.files(path  = "../../SALURBAL Covid19 Files/tmp_files/", full.names = T)
 zip::zip(zipfile = "//files.drexel.edu/colleges/SOPH/Shared/UHC/Projects/Bilal_DP5/Data/SALURBAL_dp5_server/covid_data/salurbal_covid.zip",
-         files_to_zip)
+         files_to_zip,
+         mode = "cherry-pick")
+

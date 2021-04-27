@@ -29,10 +29,10 @@
   
   
   ## Development Setup
-  load("covid19_processed_data_dynamic.rdata")
+  # load("covid19_processed_data_dynamic.rdata")
   
   ## Stage Set up
-  # load("../../SALURBAL Covid19 Git Internal/Clean/covid19_processed_data_dynamic.rdata")
+  load("../Clean/covid19_processed_data_dynamic.rdata")
   
   ## Production Setup
   # print("start download")
