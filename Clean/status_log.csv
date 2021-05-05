@@ -1,10 +1,10 @@
 Step,Status,Access Date
-Country (JHU),Okay,"May 03, 21"
-Brazil,Okay,"May 03, 21"
-Mexico,Okay,"May 03, 21"
-Chile,Okay,"May 03, 21"
-Colombia,Okay,"May 03, 21"
-Peru,Okay,"May 03, 21"
-Guatemala,Okay,"Apr 27, 21"
-Argentina,Okay,"Apr 27, 21"
-Compile,Okay,"May 03, 21"
+Country (JHU),Okay,"May 04, 21"
+Brazil,Okay,"May 04, 21"
+Mexico,Okay,"May 04, 21"
+Chile,Okay,"May 04, 21"
+Colombia,Okay,"May 04, 21"
+Peru,Okay,"May 04, 21"
+Guatemala,Okay,Error: Missing Days
+Argentina,Okay,Error: Missing Days
+Compile,Okay,"May 04, 21"
