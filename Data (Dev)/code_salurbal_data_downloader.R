@@ -53,8 +53,8 @@ download.file(url_peru_deaths,destfile = "../../SALURBAL Covid19 Files/tmp_files
 # ## Argentina (Manual Download on Work PC)
 # url_benosares = "https://cdn.buenosaires.gob.ar/datosabiertos/datasets/salud/casos-covid-19/casos_covid19.csv"
 # download.file(url_benosares, destfile = "../../SALURBAL Covid19 Files/tmp_files/argentina_BA_tmp.csv")
-url_ar_testing = "https://sisa.msal.gov.ar/datos/descargas/covid-19/files/Covid19Determinaciones.csv"
-download.file(url_ar_testing, destfile = "../../SALURBAL Covid19 Files/tmp_files/argentina_testing_tmp.csv")
+# url_ar_testing = "https://sisa.msal.gov.ar/datos/descargas/covid-19/files/Covid19Determinaciones.csv"
+# download.file(url_ar_testing, destfile = "../../SALURBAL Covid19 Files/tmp_files/argentina_testing_tmp.csv")
 # url_ar_micro = "https://sisa.msal.gov.ar/datos/descargas/covid-19/files/Covid19Casos.csv"
 # download.file(url_ar_micro, destfile = "../../SALURBAL Covid19 Files/tmp_files/argentina_tmp.csv")
 

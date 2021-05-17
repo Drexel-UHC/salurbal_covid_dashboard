@@ -23,7 +23,7 @@ library(ggrepel)
 library(readxl)
 library(googlesheets4)
 library(RColorBrewer)
-library(tidyverse)
+library(tidyverse) 
 
 #### 0. Global Variables ####
 
@@ -385,17 +385,6 @@ gitadd <- function(dir = getwd()){
   shell(cmd)
 }
 
-# Git commit.
-gitcommit <- function(msg = "commit from Rstudio", dir = getwd()){
-  cmd_list <- list(
-    cmd1 = tolower(substr(dir,1,2)),
-    cmd2 = paste("cd",dir),
-    cmd3 = paste0("git commit -am ","'",msg,"'")
-  )
-  cmd <- paste(unlist(cmd_list),collapse = " & ")
-  shell(cmd)
-}
-
 # Git push.
 gitpush <- function(dir = getwd()){
   cmd_list <- list(
@@ -406,7 +395,7 @@ gitpush <- function(dir = getwd()){
   cmd <- paste(unlist(cmd_list),collapse = " & ")
   shell(cmd)
 }
-gitcommit <- function(msg = "commit from Rstudio", dir = getwd()){
+gitcommit <- function(msg = paste0("Data Update - ", format(Sys.Date(),"%m-%d-%Y")), dir = getwd()){
   cmd = sprintf("git commit -m\"%s\"",msg)
   system(cmd)
 }

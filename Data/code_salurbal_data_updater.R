@@ -1,7 +1,7 @@
 rm(list=ls())
 options(timeout=14400)
 source("code_salurbal_data_updater_util.R")
-cutoff_date = "04-15-2021"
+cutoff_date = "04-15-2021" 
 
 # load("tmp_files/work_space.RData")
 
@@ -1509,371 +1509,371 @@ try_GT = try({
   print("Okay")
 })
 #### 9. Argentina  ####
-try_AR = try({
-  #### ___9.1  Get raw data  #####
-  ## Raw BA Data
-  ar_micro_BA_raw = fread("tmp_files/casos_covid19.csv") %>% 
-    as_tibble() %>% 
-    filter(provincia== "CABA") %>% 
-    filter(clasificacion=="confirmado") %>%   
-    filter(!is.na(comuna)) %>% 
-    select(comuna,
-           date = fecha_apertura_snvs,
-           death=fallecido) %>% 
-    mutate(death = case_when(death == "si"~"SI",
-                             is.na(death)~"NO",
-                             TRUE~"NO")) %>% 
-    mutate(date = date %>% str_sub(1,9) %>% dmy()) %>% 
-    mutate(salid2_name = paste("Comuna",comuna)) %>% 
-    left_join(xwalk_sal_ar %>% select(salid2_name, mun)) %>% 
-    select(mun, date, death)
-  
-  
-  ## Raw Agertina Data
-  ar_micro_raw = fread("tmp_files/Covid19Casos.csv") %>% 
-    # filter(residencia_provincia_nombre!="CABA") %>% 
-    as_tibble() %>%
-    select(prov = residencia_provincia_id,
-           dept = residencia_departamento_id,
-           prov_name = residencia_provincia_nombre,
-           dept_name = residencia_departamento_nombre,
-           # date = fecha_apertura   , # fecha_apertura                
-           date = fecha_diagnostico   , # fecha_diagnostico                
-           type = clasificacion_resumen,
-           death = fallecido) %>% 
-    mutate(prov = str_pad(prov,2, "left","0"),
-           dept = str_pad(dept,3, "left","0"),
-           mun = paste0(prov, dept),
-           date = ymd(date)) %>% 
-    filter(type == "Confirmado") %>%
-    filter(!mun%in%ar_micro_BA_raw$mun) %>%
-    bind_rows(ar_micro_BA_raw) %>% 
-    filter(!is.na(date))
-  
-  ## Raw Cases (ar_mun_cases)
-  ar_mun_cases_raw = ar_micro_raw %>% 
-    select(mun, date) %>% 
-    count(mun, date, name = "confirmed")
-  min_date =  mdy("03-15-2020")
-  max_date = max(ar_mun_cases_raw$date)
-  ar_mun_cases = tibble(mun= list(unique(ar_mun_cases_raw$mun)),
-                        date = seq(min_date,max_date, by = "day")) %>% 
-    unnest() %>% 
-    left_join(ar_mun_cases_raw) %>% 
-    mutate(confirmed = ifelse(is.na(confirmed),0,confirmed)) %>% 
-    group_by(mun) %>% 
-    group_modify(~.x %>% 
-                   arrange(date) %>%
-                   mutate(confirmed = cumsum(confirmed))) %>% 
-    ungroup() %>% 
-    arrange(mun, date)
-  # ar_mun_cases %>% 
-  #   filter(mun =="06056") %>% 
-  #   ggplot(aes(date, confirmed))+
-  #   geom_line()
-  ar_mun_cases_daily_tmp = tibble(mun= list(unique(ar_mun_cases_raw$mun)),
-                                  date = seq(min_date,max_date, by = "day")) %>% 
-    unnest() %>% 
-    left_join(ar_mun_cases_raw) %>% 
-    mutate(confirmed = ifelse(is.na(confirmed),0,confirmed)) %>% 
-    arrange(mun, date)
-  # ar_mun_cases_daily_tmp %>% 
-  #   ggplot(aes(date, confirmed, col = mun))+
-  #   theme(legend.position = "none")+
-  #   geom_line()
-  
-  ## Raw Testing (ar_mun_tests)
-  ar_BA_testing  = fread("tmp_files/casos_covid19.csv") %>% 
-    as_tibble() %>% 
-    filter(provincia== "CABA") %>% 
-    filter(clasificacion%in%c("confirmado","descartado")) %>% 
-    filter(!is.na(comuna)) %>% 
-    select(comuna,
-           date = fecha_apertura_snvs) %>% 
-    mutate(date = date %>% str_sub(1,9) %>% dmy()) %>% 
-    mutate(salid2_name = paste("Comuna",comuna)) %>% 
-    left_join(xwalk_sal_ar %>% select(salid2_name, mun)) %>% 
-    count(mun, date, name = "tests") %>% 
-    arrange(mun, date) %>% 
-    # group_by(mun) %>% 
-    # group_modify(~.x %>% 
-    #                arrange(date) %>% 
-    #                mutate(tests = cumsum(tests))) %>% 
-    # ungroup() %>% 
-    left_join(ar_mun_cases_daily_tmp %>% 
-                rename(pos = confirmed) )%>% 
-    mutate(pos = ifelse(is.na(pos),0,pos))
-  ar_BA_testing %>% 
-    filter(date > ymd("2020-08-29 ")) %>% 
-    arrange(date) %>% 
-    ggplot(aes(date, tests, col = mun))+geom_line()+
-    theme(legend.position = 'none')
-  ar_mun_tests = fread("tmp_files/argentina_testing_tmp.csv") %>% 
-    as_tibble() %>% 
-    select(date = fecha,
-           prov=codigo_indec_provincia,
-           dept = codigo_indec_departamento,
-           pos = positivos,  
-           tests = total) %>% 
-    mutate(prov = str_pad(prov,2, "left","0"),
-           dept = str_pad(dept,3, "left","0"),
-           mun = paste0(prov, dept),
-           date = ymd(date),
-           pos = ifelse(is.na(pos),0,pos)) %>% 
-    select(mun, date, tests, pos) %>% 
-    arrange(mun, date) %>% 
-    group_by(mun,date) %>% 
-    summarize(tests = sum(tests, na.rm = T),
-              pos = sum(pos, na.rm = T)) %>% 
-    ungroup() %>% 
-    filter(!mun%in%ar_micro_BA_raw$mun) %>%
-    bind_rows(ar_BA_testing) 
-  ar_mun_tests %>% 
-    filter(date > ymd("2020-08-29 ")) %>% 
-    arrange(date) %>% 
-    ggplot(aes(date, pos, col = mun))+geom_line()+
-    theme(legend.position = 'none')
-  
-  # xwalk_sal_ar %>%
-  #   filter(mun%in%xwalk_sal_ar$mun[!xwalk_sal_ar$mun%in%ar_mun_tests$mun])
-  # xwalk_sal_ar %>%
-  #   filter(salid1%in%c('101106','101124','101128'))
-  ## Note: This testing file is missing some municipalities. For SALURBAL cities in Argentina,
-  ## there are missing total testing numbers for '101106','101124','101128'. We will omit these cities
-  ## from the positivity dataset due to missing/incomplete denominator (total tests).
-  
-  ## Raw Deaths (ar_mun_deaths)
-  ar_mun_deaths_raw = ar_micro_raw %>% 
-    filter(death == "SI") %>% 
-    select(mun, date) %>% 
-    count(mun, date, name = "deaths")
-  
-  ar_mun_deaths = tibble(mun= list(unique(ar_mun_cases_raw$mun)),
-                         date = seq(min_date,max_date, by = "day")) %>% 
-    unnest() %>% 
-    left_join(ar_mun_deaths_raw) %>% 
-    mutate(deaths = ifelse(is.na(deaths),0,deaths)) %>% 
-    group_by(mun) %>% 
-    group_modify(~.x %>% 
-                   arrange(date) %>%
-                   mutate(deaths = cumsum(deaths))) %>% 
-    ungroup() %>% 
-    arrange(mun, date)
-  
-  
-  ## Final Processed File (ar_mun_file)
-  ar_mun_file_raw  = left_join(ar_mun_cases,ar_mun_deaths)%>% 
-    arrange(mun, date) %>% 
-    left_join(ar_mun_tests)
-  min_date_tmp = mdy("03-15-2020")
-  max_date_tmp = max(raw_gt_mun_raw$date)
-  ar_mun_file = tibble(mun = list(unique(ar_mun_file_raw$mun)),
-                       date = seq(min_date_tmp,max_date_tmp, by = 'day') ) %>% 
-    unnest(cols = c(mun)) %>% 
-    arrange(mun, date) %>% 
-    left_join(ar_mun_file_raw, by = c('mun',"date")) %>% 
-    mutate(country = "Argentina")
-  
-  #### ___9.2 -  Cumulative ####
-  full_ar_l1 = ar_mun_file  %>% 
-    left_join(xwalk_sal_ar) %>% 
-    mutate(level = "L1") %>% 
-    group_by(date, level,salid1, salid1_name, country) %>% 
-    summarise(confirmed = sum(confirmed),
-              deaths  = sum(deaths)) %>% 
-    ungroup() %>% 
-    arrange(salid1_name,date) %>% 
-    mutate(salid1_name = ifelse(is.na(salid1),
-                                "Argentina Non-salurbal",
-                                salid1_name),
-           salid1 = ifelse(is.na(salid1),
-                           paste0("AR","888"),
-                           salid1)) %>% 
-    left_join(pop_df %>% filter(level == "L1") %>% select(-level), 
-              by = c("salid1"="loc")) %>% 
-    mutate(confirmed_rate = round((confirmed/pop)*10^6,2),
-           deaths_rate = round((deaths/pop)*10^7,2))   %>% 
-    rename(loc = salid1_name) %>% 
-    mutate(country = "Argentina")%>% 
-    arrange(salid1, date) 
-  
-  full_ar_l2 = ar_mun_file  %>% 
-    left_join(xwalk_sal_ar) %>% 
-    mutate(level = "L2") %>% 
-    group_by(date, level,salid2, salid2_name, country) %>% 
-    summarise(confirmed = sum(confirmed),
-              deaths = sum(deaths)) %>% 
-    ungroup() %>% 
-    arrange(salid2_name,date) %>% 
-    mutate(salid2_name = ifelse(is.na(salid2),
-                                "Argentina Non-salurbal",
-                                salid2_name),
-           salid2 = ifelse(is.na(salid2),
-                           paste0("AR","888"),
-                           salid2)) %>% 
-    left_join(pop_df %>% filter(level == "L2") %>% select(-level), 
-              by = c("salid2"="loc")) %>% 
-    mutate(confirmed_rate = round((confirmed/pop)*10^6,2),
-           deaths_rate = round((deaths/pop)*10^7,2))   %>% 
-    rename(loc = salid2_name) %>% 
-    mutate(country = "Argentina")%>% 
-    arrange(salid2, date)
-  
-  #### ___9.3 -  Daily ####
-  tidy.daily.ar.l1 = clean_daily_salurbal_smooth(full_ar_l1)%>% ungroup()%>% mutate(level = "L1")
-  tidy.daily.ar.l2 = clean_daily_salurbal_smooth(full_ar_l2)%>% ungroup()%>% mutate(level = "L2")
-  
-  #### ___9.3 -  Daily Testing ####
-  tidy.daily.tests.ar.l1 = ar_mun_tests %>% 
-    left_join(select(xwalk_sal_ar,mun, salid1, salid1_name,country ) %>% 
-                filter(!salid1%in%c('101106','101124','101128') ) ) %>%  
-    mutate(level = "L1") %>% 
-    group_by(date, level,salid1, salid1_name, country) %>% 
-    summarise(confirmed = sum(pos,na.rm = T),
-              tests = sum(tests, na.rm = T)) %>% 
-    ungroup() %>% 
-    mutate(salid1_name = ifelse(is.na(salid1),
-                                "Argentina Non-salurbal",
-                                salid1_name),
-           salid1 = ifelse(is.na(salid1),
-                           paste0("AR","888"),
-                           salid1))%>% ungroup() %>% 
-    rename(loc = salid1_name) %>% 
-    arrange(salid1, date) %>% 
-    select(country,loc,salid = salid1, date, 
-           daily_cases=confirmed,
-           daily_tests=tests) %>% 
-    group_by(country, loc, salid ) %>% 
-    mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
-    mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
-    ungroup() %>%
-    drop_na()%>% 
-    left_join(pop_l1 %>% select(salid = loc, pop)) %>% 
-    mutate(rate = (rollsum_tests/pop)*10^6,
-           type = 'tests',
-           smooth_days = 7,
-           level = "L1") %>% 
-    select(country, loc, salid, date, type,
-           daily_counts = daily_tests, 
-           rollsum = rollsum_tests,
-           rate,
-           smooth_days,
-           level)%>% 
-    mutate(rate = ifelse(is.na(rate),0,rate))
-  
-  tidy.daily.pos.ar.l1 = ar_mun_tests %>% 
-    left_join(select(xwalk_sal_ar,mun, salid1, salid1_name,country ) %>% 
-                filter(!salid1%in%c('101106','101124','101128') ) ) %>%  
-    mutate(level = "L1") %>% 
-    group_by(date, level,salid1, salid1_name, country) %>% 
-    summarise(confirmed = sum(pos,na.rm = T),
-              tests = sum(tests, na.rm = T)) %>% 
-    ungroup() %>% 
-    mutate(salid1_name = ifelse(is.na(salid1),
-                                "Argentina Non-salurbal",
-                                salid1_name),
-           salid1 = ifelse(is.na(salid1),
-                           paste0("AR","888"),
-                           salid1))%>% ungroup() %>% 
-    rename(loc = salid1_name) %>% 
-    arrange(salid1, date) %>% 
-    select(country,loc,salid = salid1, date, 
-           daily_cases=confirmed,
-           daily_tests=tests) %>% 
-    group_by(country, loc, salid ) %>% 
-    mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
-    mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
-    ungroup() %>%
-    drop_na() %>% 
-    mutate(daily_positivity_pct = NA,
-           rollsum_daily_positivity_pct = rollsum_cases/rollsum_tests*100 %>% round(2),
-           type = "positivity",
-           smooth_days = 7,
-           level = "L1") %>%
-    select(country, loc, salid, date, type,
-           daily_counts = daily_tests, 
-           rollsum = rollsum_tests,
-           rate = rollsum_daily_positivity_pct,
-           smooth_days,
-           level)%>% 
-    mutate(rate = ifelse(is.na(rate),0,rate))
-  tidy.daily.pos.ar.l1
-  tidy.daily.tests.ar.l2 = ar_mun_tests %>% 
-    left_join(select(xwalk_sal_ar,mun, salid2, salid2_name,country ) %>% 
-                filter(!salid2%in%c('101106','101124','101128') ) ) %>%  
-    mutate(level = "L2") %>% 
-    group_by(date, level,salid2, salid2_name, country) %>% 
-    summarise(confirmed = sum(pos,na.rm = T),
-              tests = sum(tests, na.rm = T)) %>% 
-    ungroup() %>% 
-    mutate(salid2_name = ifelse(is.na(salid2),
-                                "Argentina Non-salurbal",
-                                salid2_name),
-           salid2 = ifelse(is.na(salid2),
-                           paste0("AR","888"),
-                           salid2))%>% ungroup() %>% 
-    rename(loc = salid2_name) %>% 
-    arrange(salid2, date) %>% 
-    select(country,loc,salid = salid2, date, 
-           daily_cases=confirmed,
-           daily_tests=tests) %>% 
-    group_by(country, loc, salid ) %>% 
-    mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
-    mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
-    ungroup() %>%
-    drop_na() %>% 
-    left_join(pop_l2 %>% select(salid = loc, pop)) %>% 
-    mutate(rate = (rollsum_tests/pop)*10^6,
-           type = 'tests',
-           smooth_days = 7,
-           level = "L2") %>% 
-    select(country, loc, salid, date, type,
-           daily_counts = daily_tests, 
-           rollsum = rollsum_tests,
-           rate,
-           smooth_days,
-           level)%>% 
-    mutate(rate = ifelse(is.na(rate),0,rate))
-  
-  tidy.daily.pos.ar.l2 = ar_mun_tests %>% 
-    left_join(select(xwalk_sal_ar,mun, salid2, salid2_name,country ) %>% 
-                filter(!salid2%in%c('101106','101124','101128') ) ) %>%  
-    mutate(level = "L2") %>% 
-    group_by(date, level,salid2, salid2_name, country) %>% 
-    summarise(confirmed = sum(pos,na.rm = T),
-              tests = sum(tests, na.rm = T)) %>% 
-    ungroup() %>% 
-    mutate(salid2_name = ifelse(is.na(salid2),
-                                "Argentina Non-salurbal",
-                                salid2_name),
-           salid2 = ifelse(is.na(salid2),
-                           paste0("AR","888"),
-                           salid2))%>% ungroup() %>% 
-    rename(loc = salid2_name) %>% 
-    arrange(salid2, date) %>% 
-    select(country,loc,salid = salid2, date, 
-           daily_cases=confirmed,
-           daily_tests=tests) %>% 
-    group_by(country, loc, salid ) %>% 
-    mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
-    mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
-    ungroup() %>%
-    drop_na() %>% 
-    mutate(daily_positivity_pct = NA,
-           rollsum_daily_positivity_pct = rollsum_cases/rollsum_tests*100 %>% round(2),
-           type = "positivity",
-           smooth_days = 7,
-           level = "L2") %>%
-    select(country, loc, salid, date, type,
-           daily_counts = daily_tests, 
-           rollsum = rollsum_tests,
-           rate = rollsum_daily_positivity_pct,
-           smooth_days,
-           level)%>% 
-    mutate(rate = ifelse(is.na(rate),0,rate))
-  
-  print("Okay")
-})
+# try_AR = try({
+#   #### ___9.1  Get raw data  #####
+#   ## Raw BA Data
+#   ar_micro_BA_raw = fread("tmp_files/casos_covid19.csv") %>% 
+#     as_tibble() %>% 
+#     filter(provincia== "CABA") %>% 
+#     filter(clasificacion=="confirmado") %>%   
+#     filter(!is.na(comuna)) %>% 
+#     select(comuna,
+#            date = fecha_apertura_snvs,
+#            death=fallecido) %>% 
+#     mutate(death = case_when(death == "si"~"SI",
+#                              is.na(death)~"NO",
+#                              TRUE~"NO")) %>% 
+#     mutate(date = date %>% str_sub(1,9) %>% dmy()) %>% 
+#     mutate(salid2_name = paste("Comuna",comuna)) %>% 
+#     left_join(xwalk_sal_ar %>% select(salid2_name, mun)) %>% 
+#     select(mun, date, death)
+#   
+#   
+#   ## Raw Agertina Data
+#   ar_micro_raw = fread("tmp_files/Covid19Casos.csv") %>% 
+#     # filter(residencia_provincia_nombre!="CABA") %>% 
+#     as_tibble() %>%
+#     select(prov = residencia_provincia_id,
+#            dept = residencia_departamento_id,
+#            prov_name = residencia_provincia_nombre,
+#            dept_name = residencia_departamento_nombre,
+#            # date = fecha_apertura   , # fecha_apertura                
+#            date = fecha_diagnostico   , # fecha_diagnostico                
+#            type = clasificacion_resumen,
+#            death = fallecido) %>% 
+#     mutate(prov = str_pad(prov,2, "left","0"),
+#            dept = str_pad(dept,3, "left","0"),
+#            mun = paste0(prov, dept),
+#            date = ymd(date)) %>% 
+#     filter(type == "Confirmado") %>%
+#     filter(!mun%in%ar_micro_BA_raw$mun) %>%
+#     bind_rows(ar_micro_BA_raw) %>% 
+#     filter(!is.na(date))
+#   
+#   ## Raw Cases (ar_mun_cases)
+#   ar_mun_cases_raw = ar_micro_raw %>% 
+#     select(mun, date) %>% 
+#     count(mun, date, name = "confirmed")
+#   min_date =  mdy("03-15-2020")
+#   max_date = max(ar_mun_cases_raw$date)
+#   ar_mun_cases = tibble(mun= list(unique(ar_mun_cases_raw$mun)),
+#                         date = seq(min_date,max_date, by = "day")) %>% 
+#     unnest() %>% 
+#     left_join(ar_mun_cases_raw) %>% 
+#     mutate(confirmed = ifelse(is.na(confirmed),0,confirmed)) %>% 
+#     group_by(mun) %>% 
+#     group_modify(~.x %>% 
+#                    arrange(date) %>%
+#                    mutate(confirmed = cumsum(confirmed))) %>% 
+#     ungroup() %>% 
+#     arrange(mun, date)
+#   # ar_mun_cases %>% 
+#   #   filter(mun =="06056") %>% 
+#   #   ggplot(aes(date, confirmed))+
+#   #   geom_line()
+#   ar_mun_cases_daily_tmp = tibble(mun= list(unique(ar_mun_cases_raw$mun)),
+#                                   date = seq(min_date,max_date, by = "day")) %>% 
+#     unnest() %>% 
+#     left_join(ar_mun_cases_raw) %>% 
+#     mutate(confirmed = ifelse(is.na(confirmed),0,confirmed)) %>% 
+#     arrange(mun, date)
+#   # ar_mun_cases_daily_tmp %>% 
+#   #   ggplot(aes(date, confirmed, col = mun))+
+#   #   theme(legend.position = "none")+
+#   #   geom_line()
+#   
+#   ## Raw Testing (ar_mun_tests)
+#   ar_BA_testing  = fread("tmp_files/casos_covid19.csv") %>% 
+#     as_tibble() %>% 
+#     filter(provincia== "CABA") %>% 
+#     filter(clasificacion%in%c("confirmado","descartado")) %>% 
+#     filter(!is.na(comuna)) %>% 
+#     select(comuna,
+#            date = fecha_apertura_snvs) %>% 
+#     mutate(date = date %>% str_sub(1,9) %>% dmy()) %>% 
+#     mutate(salid2_name = paste("Comuna",comuna)) %>% 
+#     left_join(xwalk_sal_ar %>% select(salid2_name, mun)) %>% 
+#     count(mun, date, name = "tests") %>% 
+#     arrange(mun, date) %>% 
+#     # group_by(mun) %>% 
+#     # group_modify(~.x %>% 
+#     #                arrange(date) %>% 
+#     #                mutate(tests = cumsum(tests))) %>% 
+#     # ungroup() %>% 
+#     left_join(ar_mun_cases_daily_tmp %>% 
+#                 rename(pos = confirmed) )%>% 
+#     mutate(pos = ifelse(is.na(pos),0,pos))
+#   ar_BA_testing %>% 
+#     filter(date > ymd("2020-08-29 ")) %>% 
+#     arrange(date) %>% 
+#     ggplot(aes(date, tests, col = mun))+geom_line()+
+#     theme(legend.position = 'none')
+#   ar_mun_tests = fread("tmp_files/argentina_testing_tmp.csv") %>% 
+#     as_tibble() %>% 
+#     select(date = fecha,
+#            prov=codigo_indec_provincia,
+#            dept = codigo_indec_departamento,
+#            pos = positivos,  
+#            tests = total) %>% 
+#     mutate(prov = str_pad(prov,2, "left","0"),
+#            dept = str_pad(dept,3, "left","0"),
+#            mun = paste0(prov, dept),
+#            date = ymd(date),
+#            pos = ifelse(is.na(pos),0,pos)) %>% 
+#     select(mun, date, tests, pos) %>% 
+#     arrange(mun, date) %>% 
+#     group_by(mun,date) %>% 
+#     summarize(tests = sum(tests, na.rm = T),
+#               pos = sum(pos, na.rm = T)) %>% 
+#     ungroup() %>% 
+#     filter(!mun%in%ar_micro_BA_raw$mun) %>%
+#     bind_rows(ar_BA_testing) 
+#   ar_mun_tests %>% 
+#     filter(date > ymd("2020-08-29 ")) %>% 
+#     arrange(date) %>% 
+#     ggplot(aes(date, pos, col = mun))+geom_line()+
+#     theme(legend.position = 'none')
+#   
+#   # xwalk_sal_ar %>%
+#   #   filter(mun%in%xwalk_sal_ar$mun[!xwalk_sal_ar$mun%in%ar_mun_tests$mun])
+#   # xwalk_sal_ar %>%
+#   #   filter(salid1%in%c('101106','101124','101128'))
+#   ## Note: This testing file is missing some municipalities. For SALURBAL cities in Argentina,
+#   ## there are missing total testing numbers for '101106','101124','101128'. We will omit these cities
+#   ## from the positivity dataset due to missing/incomplete denominator (total tests).
+#   
+#   ## Raw Deaths (ar_mun_deaths)
+#   ar_mun_deaths_raw = ar_micro_raw %>% 
+#     filter(death == "SI") %>% 
+#     select(mun, date) %>% 
+#     count(mun, date, name = "deaths")
+#   
+#   ar_mun_deaths = tibble(mun= list(unique(ar_mun_cases_raw$mun)),
+#                          date = seq(min_date,max_date, by = "day")) %>% 
+#     unnest() %>% 
+#     left_join(ar_mun_deaths_raw) %>% 
+#     mutate(deaths = ifelse(is.na(deaths),0,deaths)) %>% 
+#     group_by(mun) %>% 
+#     group_modify(~.x %>% 
+#                    arrange(date) %>%
+#                    mutate(deaths = cumsum(deaths))) %>% 
+#     ungroup() %>% 
+#     arrange(mun, date)
+#   
+#   
+#   ## Final Processed File (ar_mun_file)
+#   ar_mun_file_raw  = left_join(ar_mun_cases,ar_mun_deaths)%>% 
+#     arrange(mun, date) %>% 
+#     left_join(ar_mun_tests)
+#   min_date_tmp = mdy("03-15-2020")
+#   max_date_tmp = max(raw_gt_mun_raw$date)
+#   ar_mun_file = tibble(mun = list(unique(ar_mun_file_raw$mun)),
+#                        date = seq(min_date_tmp,max_date_tmp, by = 'day') ) %>% 
+#     unnest(cols = c(mun)) %>% 
+#     arrange(mun, date) %>% 
+#     left_join(ar_mun_file_raw, by = c('mun',"date")) %>% 
+#     mutate(country = "Argentina")
+#   
+#   #### ___9.2 -  Cumulative ####
+#   full_ar_l1 = ar_mun_file  %>% 
+#     left_join(xwalk_sal_ar) %>% 
+#     mutate(level = "L1") %>% 
+#     group_by(date, level,salid1, salid1_name, country) %>% 
+#     summarise(confirmed = sum(confirmed),
+#               deaths  = sum(deaths)) %>% 
+#     ungroup() %>% 
+#     arrange(salid1_name,date) %>% 
+#     mutate(salid1_name = ifelse(is.na(salid1),
+#                                 "Argentina Non-salurbal",
+#                                 salid1_name),
+#            salid1 = ifelse(is.na(salid1),
+#                            paste0("AR","888"),
+#                            salid1)) %>% 
+#     left_join(pop_df %>% filter(level == "L1") %>% select(-level), 
+#               by = c("salid1"="loc")) %>% 
+#     mutate(confirmed_rate = round((confirmed/pop)*10^6,2),
+#            deaths_rate = round((deaths/pop)*10^7,2))   %>% 
+#     rename(loc = salid1_name) %>% 
+#     mutate(country = "Argentina")%>% 
+#     arrange(salid1, date) 
+#   
+#   full_ar_l2 = ar_mun_file  %>% 
+#     left_join(xwalk_sal_ar) %>% 
+#     mutate(level = "L2") %>% 
+#     group_by(date, level,salid2, salid2_name, country) %>% 
+#     summarise(confirmed = sum(confirmed),
+#               deaths = sum(deaths)) %>% 
+#     ungroup() %>% 
+#     arrange(salid2_name,date) %>% 
+#     mutate(salid2_name = ifelse(is.na(salid2),
+#                                 "Argentina Non-salurbal",
+#                                 salid2_name),
+#            salid2 = ifelse(is.na(salid2),
+#                            paste0("AR","888"),
+#                            salid2)) %>% 
+#     left_join(pop_df %>% filter(level == "L2") %>% select(-level), 
+#               by = c("salid2"="loc")) %>% 
+#     mutate(confirmed_rate = round((confirmed/pop)*10^6,2),
+#            deaths_rate = round((deaths/pop)*10^7,2))   %>% 
+#     rename(loc = salid2_name) %>% 
+#     mutate(country = "Argentina")%>% 
+#     arrange(salid2, date)
+#   
+#   #### ___9.3 -  Daily ####
+#   tidy.daily.ar.l1 = clean_daily_salurbal_smooth(full_ar_l1)%>% ungroup()%>% mutate(level = "L1")
+#   tidy.daily.ar.l2 = clean_daily_salurbal_smooth(full_ar_l2)%>% ungroup()%>% mutate(level = "L2")
+#   
+#   #### ___9.3 -  Daily Testing ####
+#   tidy.daily.tests.ar.l1 = ar_mun_tests %>% 
+#     left_join(select(xwalk_sal_ar,mun, salid1, salid1_name,country ) %>% 
+#                 filter(!salid1%in%c('101106','101124','101128') ) ) %>%  
+#     mutate(level = "L1") %>% 
+#     group_by(date, level,salid1, salid1_name, country) %>% 
+#     summarise(confirmed = sum(pos,na.rm = T),
+#               tests = sum(tests, na.rm = T)) %>% 
+#     ungroup() %>% 
+#     mutate(salid1_name = ifelse(is.na(salid1),
+#                                 "Argentina Non-salurbal",
+#                                 salid1_name),
+#            salid1 = ifelse(is.na(salid1),
+#                            paste0("AR","888"),
+#                            salid1))%>% ungroup() %>% 
+#     rename(loc = salid1_name) %>% 
+#     arrange(salid1, date) %>% 
+#     select(country,loc,salid = salid1, date, 
+#            daily_cases=confirmed,
+#            daily_tests=tests) %>% 
+#     group_by(country, loc, salid ) %>% 
+#     mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
+#     mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
+#     ungroup() %>%
+#     drop_na()%>% 
+#     left_join(pop_l1 %>% select(salid = loc, pop)) %>% 
+#     mutate(rate = (rollsum_tests/pop)*10^6,
+#            type = 'tests',
+#            smooth_days = 7,
+#            level = "L1") %>% 
+#     select(country, loc, salid, date, type,
+#            daily_counts = daily_tests, 
+#            rollsum = rollsum_tests,
+#            rate,
+#            smooth_days,
+#            level)%>% 
+#     mutate(rate = ifelse(is.na(rate),0,rate))
+#   
+#   tidy.daily.pos.ar.l1 = ar_mun_tests %>% 
+#     left_join(select(xwalk_sal_ar,mun, salid1, salid1_name,country ) %>% 
+#                 filter(!salid1%in%c('101106','101124','101128') ) ) %>%  
+#     mutate(level = "L1") %>% 
+#     group_by(date, level,salid1, salid1_name, country) %>% 
+#     summarise(confirmed = sum(pos,na.rm = T),
+#               tests = sum(tests, na.rm = T)) %>% 
+#     ungroup() %>% 
+#     mutate(salid1_name = ifelse(is.na(salid1),
+#                                 "Argentina Non-salurbal",
+#                                 salid1_name),
+#            salid1 = ifelse(is.na(salid1),
+#                            paste0("AR","888"),
+#                            salid1))%>% ungroup() %>% 
+#     rename(loc = salid1_name) %>% 
+#     arrange(salid1, date) %>% 
+#     select(country,loc,salid = salid1, date, 
+#            daily_cases=confirmed,
+#            daily_tests=tests) %>% 
+#     group_by(country, loc, salid ) %>% 
+#     mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
+#     mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
+#     ungroup() %>%
+#     drop_na() %>% 
+#     mutate(daily_positivity_pct = NA,
+#            rollsum_daily_positivity_pct = rollsum_cases/rollsum_tests*100 %>% round(2),
+#            type = "positivity",
+#            smooth_days = 7,
+#            level = "L1") %>%
+#     select(country, loc, salid, date, type,
+#            daily_counts = daily_tests, 
+#            rollsum = rollsum_tests,
+#            rate = rollsum_daily_positivity_pct,
+#            smooth_days,
+#            level)%>% 
+#     mutate(rate = ifelse(is.na(rate),0,rate))
+#   tidy.daily.pos.ar.l1
+#   tidy.daily.tests.ar.l2 = ar_mun_tests %>% 
+#     left_join(select(xwalk_sal_ar,mun, salid2, salid2_name,country ) %>% 
+#                 filter(!salid2%in%c('101106','101124','101128') ) ) %>%  
+#     mutate(level = "L2") %>% 
+#     group_by(date, level,salid2, salid2_name, country) %>% 
+#     summarise(confirmed = sum(pos,na.rm = T),
+#               tests = sum(tests, na.rm = T)) %>% 
+#     ungroup() %>% 
+#     mutate(salid2_name = ifelse(is.na(salid2),
+#                                 "Argentina Non-salurbal",
+#                                 salid2_name),
+#            salid2 = ifelse(is.na(salid2),
+#                            paste0("AR","888"),
+#                            salid2))%>% ungroup() %>% 
+#     rename(loc = salid2_name) %>% 
+#     arrange(salid2, date) %>% 
+#     select(country,loc,salid = salid2, date, 
+#            daily_cases=confirmed,
+#            daily_tests=tests) %>% 
+#     group_by(country, loc, salid ) %>% 
+#     mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
+#     mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
+#     ungroup() %>%
+#     drop_na() %>% 
+#     left_join(pop_l2 %>% select(salid = loc, pop)) %>% 
+#     mutate(rate = (rollsum_tests/pop)*10^6,
+#            type = 'tests',
+#            smooth_days = 7,
+#            level = "L2") %>% 
+#     select(country, loc, salid, date, type,
+#            daily_counts = daily_tests, 
+#            rollsum = rollsum_tests,
+#            rate,
+#            smooth_days,
+#            level)%>% 
+#     mutate(rate = ifelse(is.na(rate),0,rate))
+#   
+#   tidy.daily.pos.ar.l2 = ar_mun_tests %>% 
+#     left_join(select(xwalk_sal_ar,mun, salid2, salid2_name,country ) %>% 
+#                 filter(!salid2%in%c('101106','101124','101128') ) ) %>%  
+#     mutate(level = "L2") %>% 
+#     group_by(date, level,salid2, salid2_name, country) %>% 
+#     summarise(confirmed = sum(pos,na.rm = T),
+#               tests = sum(tests, na.rm = T)) %>% 
+#     ungroup() %>% 
+#     mutate(salid2_name = ifelse(is.na(salid2),
+#                                 "Argentina Non-salurbal",
+#                                 salid2_name),
+#            salid2 = ifelse(is.na(salid2),
+#                            paste0("AR","888"),
+#                            salid2))%>% ungroup() %>% 
+#     rename(loc = salid2_name) %>% 
+#     arrange(salid2, date) %>% 
+#     select(country,loc,salid = salid2, date, 
+#            daily_cases=confirmed,
+#            daily_tests=tests) %>% 
+#     group_by(country, loc, salid ) %>% 
+#     mutate(rollsum_cases = rollmean(daily_cases, 7, align = "right", fill = NA)) %>% 
+#     mutate(rollsum_tests = rollmean(daily_tests, 7, align = "right", fill = NA)) %>% 
+#     ungroup() %>%
+#     drop_na() %>% 
+#     mutate(daily_positivity_pct = NA,
+#            rollsum_daily_positivity_pct = rollsum_cases/rollsum_tests*100 %>% round(2),
+#            type = "positivity",
+#            smooth_days = 7,
+#            level = "L2") %>%
+#     select(country, loc, salid, date, type,
+#            daily_counts = daily_tests, 
+#            rollsum = rollsum_tests,
+#            rate = rollsum_daily_positivity_pct,
+#            smooth_days,
+#            level)%>% 
+#     mutate(rate = ifelse(is.na(rate),0,rate))
+#   
+#   print("Okay")
+# })
 
 
 #### 10. Compile   ####
@@ -1896,9 +1896,10 @@ try_compile = try({
                       full_pe_l1,
                       full_pe_l2,
                       full_gt_l1,
-                      full_gt_l2,
-                      full_ar_l1,
-                      full_ar_l2) %>% 
+                      full_gt_l2#,
+                      # full_ar_l1,
+                      # full_ar_l2
+                      ) %>% 
     bind_rows() %>% 
     pivot_longer(cols = c(deaths,confirmed,"confirmed_rate","deaths_rate"), 
                  names_to = "rate", values_to = "n") %>% 
@@ -2115,9 +2116,9 @@ try_compile = try({
                                 tidy.daily.pe.l1,
                                 tidy.daily.pe.l2,
                                 tidy.daily.gt.l1,
-                                tidy.daily.gt.l2,
-                                tidy.daily.ar.l1,
-                                tidy.daily.ar.l2
+                                tidy.daily.gt.l2#,
+                                # tidy.daily.ar.l1,
+                                # tidy.daily.ar.l2
   ) %>% bind_rows() %>% 
     filter(smooth_days == 7) %>% 
     bind_rows(
@@ -2132,11 +2133,11 @@ try_compile = try({
               tidy.daily.tests.gt.l1,
               tidy.daily.pos.gt.l1,
               tidy.daily.tests.gt.l2,
-              tidy.daily.pos.gt.l2,
-              tidy.daily.tests.ar.l1,
-              tidy.daily.pos.ar.l1,
-              tidy.daily.tests.ar.l2,
-              tidy.daily.pos.ar.l2
+              tidy.daily.pos.gt.l2#,
+              # tidy.daily.tests.ar.l1,
+              # tidy.daily.pos.ar.l1,
+              # tidy.daily.tests.ar.l2,
+              # tidy.daily.pos.ar.l2
               # tidy.daily.tests.cl.l1,
               # tidy.daily.tests.cl.l2,
     ) 
@@ -2233,72 +2234,73 @@ try_compile = try({
     select(level, country, loc, salid, type, date, cum_value, rate) %>% 
     drop_na()
   ## Argentina cumlative has to be done manually from raw data, because the data for testing is different from the actual cases/deaths
-  df2_positivity_Argentina_l1 = ar_mun_tests %>% 
-    left_join(select(xwalk_sal_ar,mun, salid1, salid1_name,country ) %>% 
-                filter(!salid1%in%c('101106','101124','101128') ) ) %>%  
-    mutate(level = "L1") %>% 
-    group_by(date, level,salid1, salid1_name, country) %>% 
-    summarise(confirmed = sum(pos,na.rm = T),
-              tests = sum(tests, na.rm = T)) %>% 
-    ungroup() %>% 
-    mutate(salid1_name = ifelse(is.na(salid1),
-                                "Argentina Non-salurbal",
-                                salid1_name),
-           salid1 = ifelse(is.na(salid1),
-                           paste0("AR","888"),
-                           salid1))%>% ungroup() %>% 
-    rename(loc = salid1_name) %>% 
-    arrange(salid1, date) %>% 
-    select(country,loc,salid = salid1, date, 
-           daily_cases=confirmed,
-           daily_counts=tests) %>% 
-    mutate(level = "L1", type = "positivity") %>% 
-    group_by(level, country, loc, salid,type) %>% 
-    group_modify(~.x %>% 
-                   arrange(date) %>% 
-                   mutate(cum_cases= cumsum(daily_cases) ,
-                          cum_value = cumsum(daily_counts)) ) %>% 
-    ungroup()%>% 
-    mutate(rate = round((cum_cases/cum_value)*100,2)) %>% 
-    select(level, country, loc, salid, type, date, cum_value, rate) %>% 
-    drop_na()
-  df2_positivity_Argentina_l2 = ar_mun_tests %>% 
-    left_join(
-      select(xwalk_sal_ar,mun, salid1, salid2, salid2_name,country ) %>% 
-        filter(!salid1%in%c('101106','101124','101128')) %>% 
-        select(-salid1) 
-    ) %>%  
-    mutate(level = "L2") %>% 
-    group_by(date, level,salid2, salid2_name, country) %>% 
-    summarise(confirmed = sum(pos,na.rm = T),
-              tests = sum(tests, na.rm = T)) %>% 
-    ungroup() %>% 
-    mutate(salid2_name = ifelse(is.na(salid2),
-                                "Argentina Non-salurbal",
-                                salid2_name),
-           salid2 = ifelse(is.na(salid2),
-                           paste0("AR","888"),
-                           salid2))%>% ungroup() %>% 
-    rename(loc = salid2_name) %>% 
-    arrange(salid2, date) %>% 
-    select(country,loc,salid = salid2, date, 
-           daily_cases=confirmed,
-           daily_counts=tests) %>% 
-    mutate(level = "L2", type = "positivity") %>% 
-    group_by(level, country, loc, salid,type) %>% 
-    group_modify(~.x %>% 
-                   arrange(date) %>% 
-                   mutate(cum_cases= cumsum(daily_cases) ,
-                          cum_value = cumsum(daily_counts)) ) %>% 
-    ungroup() %>% 
-    mutate(rate = round((cum_cases/cum_value)*100,2)) %>% 
-    select(level, country, loc, salid, type, date, cum_value, rate) %>% 
-    drop_na()
+  # df2_positivity_Argentina_l1 = ar_mun_tests %>% 
+  #   left_join(select(xwalk_sal_ar,mun, salid1, salid1_name,country ) %>% 
+  #               filter(!salid1%in%c('101106','101124','101128') ) ) %>%  
+  #   mutate(level = "L1") %>% 
+  #   group_by(date, level,salid1, salid1_name, country) %>% 
+  #   summarise(confirmed = sum(pos,na.rm = T),
+  #             tests = sum(tests, na.rm = T)) %>% 
+  #   ungroup() %>% 
+  #   mutate(salid1_name = ifelse(is.na(salid1),
+  #                               "Argentina Non-salurbal",
+  #                               salid1_name),
+  #          salid1 = ifelse(is.na(salid1),
+  #                          paste0("AR","888"),
+  #                          salid1))%>% ungroup() %>% 
+  #   rename(loc = salid1_name) %>% 
+  #   arrange(salid1, date) %>% 
+  #   select(country,loc,salid = salid1, date, 
+  #          daily_cases=confirmed,
+  #          daily_counts=tests) %>% 
+  #   mutate(level = "L1", type = "positivity") %>% 
+  #   group_by(level, country, loc, salid,type) %>% 
+  #   group_modify(~.x %>% 
+  #                  arrange(date) %>% 
+  #                  mutate(cum_cases= cumsum(daily_cases) ,
+  #                         cum_value = cumsum(daily_counts)) ) %>% 
+  #   ungroup()%>% 
+  #   mutate(rate = round((cum_cases/cum_value)*100,2)) %>% 
+  #   select(level, country, loc, salid, type, date, cum_value, rate) %>% 
+  #   drop_na()
+  # df2_positivity_Argentina_l2 = ar_mun_tests %>% 
+  #   left_join(
+  #     select(xwalk_sal_ar,mun, salid1, salid2, salid2_name,country ) %>% 
+  #       filter(!salid1%in%c('101106','101124','101128')) %>% 
+  #       select(-salid1) 
+  #   ) %>%  
+  #   mutate(level = "L2") %>% 
+  #   group_by(date, level,salid2, salid2_name, country) %>% 
+  #   summarise(confirmed = sum(pos,na.rm = T),
+  #             tests = sum(tests, na.rm = T)) %>% 
+  #   ungroup() %>% 
+  #   mutate(salid2_name = ifelse(is.na(salid2),
+  #                               "Argentina Non-salurbal",
+  #                               salid2_name),
+  #          salid2 = ifelse(is.na(salid2),
+  #                          paste0("AR","888"),
+  #                          salid2))%>% ungroup() %>% 
+  #   rename(loc = salid2_name) %>% 
+  #   arrange(salid2, date) %>% 
+  #   select(country,loc,salid = salid2, date, 
+  #          daily_cases=confirmed,
+  #          daily_counts=tests) %>% 
+  #   mutate(level = "L2", type = "positivity") %>% 
+  #   group_by(level, country, loc, salid,type) %>% 
+  #   group_modify(~.x %>% 
+  #                  arrange(date) %>% 
+  #                  mutate(cum_cases= cumsum(daily_cases) ,
+  #                         cum_value = cumsum(daily_counts)) ) %>% 
+  #   ungroup() %>% 
+  #   mutate(rate = round((cum_cases/cum_value)*100,2)) %>% 
+  #   select(level, country, loc, salid, type, date, cum_value, rate) %>% 
+  #   drop_na()
   
   df2 = bind_rows(df2_cases_tests_deaths,
-                  df2_positivity,
-                  df2_positivity_Argentina_l1,
-                  df2_positivity_Argentina_l2)
+                  df2_positivity#,
+                  # df2_positivity_Argentina_l1,
+                  # df2_positivity_Argentina_l2
+                  )
   
   
   
@@ -2614,10 +2616,10 @@ try_compile = try({
   
   #### ___12.2 -  Save Error Log   ####
   df_update_status = tibble(Step = c("Country (JHU)","Brazil","Mexico","Chile",
-                                     "Colombia","Peru", "Guatemala","Argentina",
+                                     "Colombia","Peru", "Guatemala",#"Argentina",
                                      "Compile")) %>% 
     mutate(Status = c(try_country, try_BR,try_MX,try_CL,
-                      try_CO,try_PE,try_GT,try_AR,
+                      try_CO,try_PE,try_GT,#try_AR,
                       try_compile)) %>% 
     left_join(df_access) %>% 
     mutate(access_date = ifelse(Step%in%c("Country (JHU)","Compile","Save"),
