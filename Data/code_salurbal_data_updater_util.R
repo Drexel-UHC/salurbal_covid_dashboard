@@ -367,6 +367,7 @@ pop_country %>% filter(loc%in%c("Mexico","Chile")) %>% group_by(loc) %>%
 # Download file and check for size error prior to writing
 # url_tmp = "https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv.gz"
 # output_name_tmp = "cases-brazil-cities-time.csv.gz"
+
 salurbal_download = function(iso2_tmp,url_tmp, output_name_tmp){
   if (str_detect(url_tmp,"zip")){ 
     salurbal_download_zip(iso2_tmp,url_tmp, output_name_tmp)

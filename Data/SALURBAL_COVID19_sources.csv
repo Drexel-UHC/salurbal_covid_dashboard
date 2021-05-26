@@ -8,6 +8,9 @@ CL,https://github.com/MinCiencia/Datos-COVID19/raw/master/output/producto38/Caso
 CO,https://www.datos.gov.co/api/views/gt2j-8ykr/rows.csv?accessType=DOWNLOAD,colombia_tmp.csv,T
 PE,https://cloud.minsa.gob.pe/s/Y8w3wHsEdYQSZRp/download,url_peru_cases_tmp.csv,T
 PE,https://cloud.minsa.gob.pe/s/Md37cjXmjT9qYSa/download,url_peru_deaths_tmp.csv,T
-AR,https://cdn.buenosaires.gob.ar/datosabiertos/datasets/salud/casos-covid-19/casos_covid19.csv,Covid19Casos.csv,F
+AR,https://cdn.buenosaires.gob.ar/datosabiertos/datasets/salud/casos-covid-19/casos_covid19.csv,casos_covid19.csv,F
 AR,https://sisa.msal.gov.ar/datos/descargas/covid-19/files/Covid19Determinaciones.zip,Covid19Determinaciones.csv,F
-AR,https://sisa.msal.gov.ar/datos/descargas/covid-19/files/Covid19Casos.zip,argentina_tmp.csv,F
+AR,https://sisa.msal.gov.ar/datos/descargas/covid-19/files/Covid19Casos.zip,Covid19Casos.csv,F
+GT,https://gtmvigilanciacovid.shinyapps.io,gt_cases_tmp.csv,F
+GT,https://gtmvigilanciacovid.shinyapps.io,gt_deaths_tmp.csv,F
+GT,https://gtmvigilanciacovid.shinyapps.io,gt_tests_tmp.csv,F

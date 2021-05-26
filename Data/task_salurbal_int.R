@@ -4,10 +4,9 @@ salurbal_covid19_update = function(){
   ## 0. Setup -----
   rm(list = ls())
   setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data")
-  source("code_salurbal_data_updater_util.R")
-  
-  
+ 
   ## 1. Clean data -----
+  task0 = try ({ source("code_salurbal_data_downloader.R")}) %>% as.character()
   task1 = try ({ source("code_salurbal_data_updater.R")}) %>% as.character()
   
   
@@ -67,7 +66,7 @@ salurbal_covid19_update = function(){
     library (RDCOMClient)
     error_rows = df_update_status %>%
       mutate(n = row_number()) %>%
-      filter(str_detect(Status, "Error")) %>%
+      filter(str_detect(Status, "rror")) %>%
       pull(n)
     html_table_tmp = df_update_status  %>%
       tableHTML(rownames = F,

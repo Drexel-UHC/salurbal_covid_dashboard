@@ -19,6 +19,7 @@
                          df_salurbal_covid_links$url,
                          df_salurbal_covid_links$output_name),
                     function(a,b,c){salurbal_download(a,b,c)})
+
 }
 
 # 2. Manual Download  ------- 
@@ -35,3 +36,24 @@
   # download.file(url_deaths,destfile = "raw_files/gt_deaths_tmp.csv")
 }
 
+# 3. Status update  ------- 
+{
+  df_status_auto = df_auto %>% 
+    mutate(date = Sys.Date(),
+           status = status %>% recode("Download Okay"="Okay"))
+  
+  df_status_manual = read.csv("SALURBAL_COVID19_sources.csv") %>% 
+    as_tibble() %>%
+    filter(!auto) %>% 
+    mutate(full_name = paste0("raw_files/",output_name),
+           date = file.info(full_name) %>% pull(mtime)%>% as.Date(),
+           status = "Manual") %>% 
+    select(country, output = output_name,status, date)
+  
+  df_update_status = bind_rows(df_status_auto,df_status_manual) %>% 
+    group_by(country, status) %>% 
+    summarize(date = max(date)) %>% 
+    ungroup() %>% 
+    arrange(country) %>% 
+    select(Country = country, Status = status, Date = date)
+}
