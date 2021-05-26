@@ -1,9 +1,8 @@
-Step,Status,Access Date
-Country (JHU),Okay,"May 25, 21"
-Brazil,Okay,"May 24, 21"
-Mexico,Okay,"May 24, 21"
-Chile,Okay,"May 24, 21"
-Colombia,Okay,"May 24, 21"
-Peru,Okay,"May 24, 21"
-Guatemala,Okay,Error: Missing Days
-Compile,Okay,"May 25, 21"
+"","Country","Status","Date"
+"1","AR","Manual",2021-05-26
+"2","BR","Okay",2021-05-26
+"3","CL","Okay",2021-05-26
+"4","CO","Okay",2021-05-26
+"5","GT","Manual",2021-05-26
+"6","MX","Okay",2021-05-26
+"7","PE","Okay",2021-05-26

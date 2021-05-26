@@ -1,11 +1,12 @@
 # 0. Setup  ------- 
 {
-  rm(list=ls())
+  rm(list=ls()[ !str_detect(ls(), c("cpu_RL|cpu_UHC|df_update_status")) ])
   options(timeout=144000)
   source("code_salurbal_data_updater_util.R")
   
   ### Clear previous tmp_files
   file.remove(list.files("tmp_files/", full.names = T))
+  file.remove("tmp_zipped_file.zip")
 }
 
 
@@ -56,4 +57,6 @@
     ungroup() %>% 
     arrange(country) %>% 
     select(Country = country, Status = status, Date = date)
+  
+  df_update_status %>% write.csv("../Clean/status_log.csv")
 }
