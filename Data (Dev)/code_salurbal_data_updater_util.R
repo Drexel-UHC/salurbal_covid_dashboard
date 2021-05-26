@@ -1,4 +1,5 @@
 rm(list=ls())
+library(zip)
 library(git2r)
 library(passport)
 library(httr)
@@ -363,6 +364,94 @@ pop_country %>% filter(loc%in%c("Mexico","Chile")) %>% group_by(loc) %>%
 #### ********************************************* ####
 
 #### 1. Functions  ####
+# Download file and check for size error prior to writing
+# url_tmp = "https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv.gz"
+# output_name_tmp = "cases-brazil-cities-time.csv.gz"
+
+salurbal_download = function(iso2_tmp,url_tmp, output_name_tmp){
+  if (str_detect(url_tmp,"zip")){ 
+    salurbal_download_zip(iso2_tmp,url_tmp, output_name_tmp)
+  } else {
+    salurbal_download_csv_gz(iso2_tmp,url_tmp, output_name_tmp)
+    }
+  
+}
+
+salurbal_download_csv_gz = function(iso2_tmp,url_tmp, output_name_tmp){
+  ## local variables
+  dir_tmp = paste0("tmp_files/",output_name_tmp)
+  dir_raw = paste0("raw_files/",output_name_tmp)
+  
+  ## Download to tmp 
+  download.file(url_tmp,destfile = dir_tmp)
+  
+  ## Check file size vs file in /files_tmp (previous day's data)
+  size_new = file.info(dir_tmp) %>% pull(size)
+  size_old = file.info(dir_raw) %>% pull(size)
+  
+  ## Overwite tmp_file if size is > old file
+  if (is.na(size_old)) {
+    file.copy(from =  dir_tmp, to = dir_raw, overwrite = T)
+    tibble(country = iso2_tmp,
+           output = output_name_tmp,
+           status = "Download Okay")
+  } else if  (size_new >= size_old) {
+    file.copy(from =  dir_tmp, to = dir_raw, overwrite = T)
+    tibble(country = iso2_tmp,
+           output = output_name_tmp,
+           status = "Download Okay")
+  }else {
+    tibble(country = iso2_tmp,
+           output = output_name_tmp,
+           status = "Download size error")  
+  }
+ 
+  
+}
+
+# iso2_tmp = "MX"
+# url_tmp = "http://datosabiertos.salud.gob.mx/gobmx/salud/datos_abiertos/datos_abiertos_covid19.zip"
+# output_name_tmp = "mx_mun_cases_tmp.csv"
+salurbal_download_zip = function(iso2_tmp,url_tmp, output_name_tmp){
+  ## local variables
+  dir_zip_tmp = "tmp_zipped_file.zip"
+  dir_tmp = paste0("tmp_files/",output_name_tmp)
+  dir_raw = paste0("raw_files/",output_name_tmp)
+  
+  ## Download file
+  download.file(url_tmp,dir_zip_tmp,quiet=F,mode="wb",timeout=79200)
+  
+  ### Unzip to tmp
+  zip::unzip(zipfile = "tmp_zipped_file.zip",exdir ="unzip_tmp", overwrite = T)
+  file.copy(from = list.files("unzip_tmp/",full.names = T),
+            to = dir_tmp )
+  file.remove(dir_zip_tmp)
+  file.remove(list.files("unzip_tmp/", full.names = T)  )
+  
+  ## Check file size vs file in /files_tmp (previous day's data)
+  size_new = file.info(dir_tmp) %>% pull(size)
+  size_old = file.info(dir_raw) %>% pull(size)
+  
+  ## Overwite tmp_file if size is > old file
+  if (is.na(size_old)) {
+    file.copy(from =  dir_tmp, to = dir_raw, overwrite = T)
+    tibble(country = iso2_tmp,
+           output = output_name_tmp,
+           status = "Download Okay")
+  } else if  (size_new >= size_old) {
+    file.copy(from =  dir_tmp, to = dir_raw, overwrite = T)
+    tibble(country = iso2_tmp,
+           output = output_name_tmp,
+           status = "Download Okay")
+  }else {
+    tibble(country = iso2_tmp,
+           output = output_name_tmp,
+           status = "Download size error")  
+  }
+  
+}
+
+
 # Git status.
 gitstatus <- function(dir = getwd()){
   cmd_list <- list(

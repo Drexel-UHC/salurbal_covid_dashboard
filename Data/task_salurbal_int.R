@@ -2,9 +2,17 @@
 salurbal_covid19_update = function(){
   
   ## 0. Setup -----
-  rm(list = ls())
-  setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data")
- 
+  {
+    library(stringr)
+    rm(list = ls())
+    cpu_RL = (str_detect(getwd(),"ranli"))
+    cpu_UHC = !cpu_RL
+    if (cpu_UHC) { 
+      setwd("C:/Users/rl627/Desktop/Git/SALURBAL COVID19 Dashbaord (Private)/Data") 
+    } else { setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data") }
+  }
+  
+  
   ## 1. Clean data -----
   task0 = try ({ source("code_salurbal_data_downloader.R")}) %>% as.character()
   task1 = try ({ source("code_salurbal_data_updater.R")}) %>% as.character()
@@ -31,6 +39,16 @@ salurbal_covid19_update = function(){
       file = "../App (Development)/covid19_processed_data_dynamic.rdata")
   } else {
     print("Step 2: Save to Clean")
+    ### Save Static
+    save(
+      countries_salurbal,other_central_countries,other_south_countries,
+      other_carribean_countries,other_lac_countries,lac_countries,minc,mind,
+      countries_references,countries_interest,col_rolling,
+      country_coords,
+      sf_world,salurbal_l1_sf,sf_salurbal_0.8,  
+      xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
+      tidy.data.all.old,
+      file = "../App (Production)/covid19_processed_data_static.rdata")
     ### Save Data
     save(
       countries_salurbal,other_central_countries,other_south_countries,
@@ -49,7 +67,7 @@ salurbal_covid19_update = function(){
     
     ### Push if no error and after 10PM
     if ( (!any(str_detect(c(task1,df_update_status$Status), "Error")))&
-         (format(Sys.time(),"%H")>=22)&
+         (format(Sys.time(),"%H")>=6)&
          (file.size("../Clean/covid19_processed_data_dynamic.rdata")<970000)) {
       print("Step 2: Push to GitHub")
       git2r::config(user.name = "rl627",user.email = "rl627@drexel.edu")
@@ -58,7 +76,7 @@ salurbal_covid19_update = function(){
       gitadd()
       gitcommit()
       gitpush()
-      }
+    }
   }
   
   ## 3. Send Email ----

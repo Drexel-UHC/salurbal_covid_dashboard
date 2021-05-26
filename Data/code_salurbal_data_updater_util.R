@@ -450,19 +450,6 @@ salurbal_download_zip = function(iso2_tmp,url_tmp, output_name_tmp){
   }
   
 }
-  
-  
-  ### Download zipped file  download.file(url_mx_cases,"mexico_tmp.zip",quiet=F,mode="wb",timeout=79200)
-  file.remove(list.files("mexico_folder_tmp", full.names = T))
-### unzip to /unzipped_tmp
-zip::unzip(zipfile = "mexico_tmp.zip",exdir = "unzipped_tmp", overwrite = T)
-### Read in unziped files and write to /tmp_files
-unzipped_file = list.files(path = "unzipped_tmp", full.names = T)
-dfa = data.table::fread( unzipped_file  ) 
-dfa %>% fwrite("tmp_files/mx_mun_cases_tmp.csv")
-###Remove unzipped_tmp
-file.remove("unzipped_tmp")
-
 
 
 # Git status.
