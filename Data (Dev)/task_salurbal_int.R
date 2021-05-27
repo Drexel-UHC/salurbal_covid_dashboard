@@ -86,7 +86,8 @@ salurbal_covid19_update = function(){
   ## 3. Send Email ----
   if(cpu_RL){ 
     library(tableHTML)
-    library (RDCOMClient)
+    library(RDCOMClient)
+    library(tidyverse)
     df_update_status = read.csv("../Clean/status_log.csv") %>% select(Country, Status,Date)
     error_rows = df_update_status %>%
       mutate(n = row_number()) %>%

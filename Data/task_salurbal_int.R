@@ -86,7 +86,8 @@ salurbal_covid19_update = function(){
   ## 3. Send Email ----
   if(cpu_RL){ 
     library(tableHTML)
-    library (RDCOMClient)
+    library(RDCOMClient)
+    library(tidyverse)
     df_update_status = read.csv("../Clean/status_log.csv") %>% select(Country, Status,Date)
     error_rows = df_update_status %>%
       mutate(n = row_number()) %>%
@@ -117,10 +118,10 @@ salurbal_covid19_update = function(){
                          "Hi SALURBAL COVID-19 Team,<br/><br/>",
                          "This is a biweekly automated email to keep track of our data updates.
                        Please see the table below for details about the data update for ",
-                         Sys.time() %>% format("%I:%M %p %b %d, %Y."),
-                         "<br/><br/>",
-                         html_table_tmp,
-                         "<br/><br/>Thanks,<br/>Ran"
+                       Sys.time() %>% format("%I:%M %p %b %d, %Y."),
+                       "<br/><br/>",
+                       html_table_tmp,
+                       "<br/><br/>Thanks,<br/>Ran"
                        )
     )
     ## Send email (Daily to self and Weekly to group)
