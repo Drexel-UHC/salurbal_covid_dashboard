@@ -1618,7 +1618,7 @@ try_AR = try({
     arrange(date) %>%
     ggplot(aes(date, tests, col = mun))+geom_line()+
     theme(legend.position = 'none')
-  ar_mun_tests = fread("raw_files/argentina_testing_tmp.csv") %>%
+  ar_mun_tests = fread("raw_files/Covid19Determinaciones.csv") %>%
     as_tibble() %>%
     select(date = fecha,
            prov=codigo_indec_provincia,

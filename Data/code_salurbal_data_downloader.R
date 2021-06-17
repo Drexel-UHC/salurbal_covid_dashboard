@@ -25,17 +25,15 @@
 
 # 2. Manual Download  ------- 
 {
-  # # ## Guatemala
-  # "Confirmados po municipio fecha de emision "
-  # url_cases = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_c634a483/session/cd1d48fc794784ddd6c39979d8a1f805/download/confirmadosFER?w=11ab8d1d"
+  # # # ## Guatemala
+  # # "Confirmados po municipio fecha de emision "
+  # url_cases = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_4229f151/session/18c2a1510d96d4f96549146ab71cd341/download/confirmadosFER?w=a8d8dac3"
   # download.file(url_cases,destfile = "raw_files/gt_cases_tmp.csv")
-  # "tamizados  por municipio"
-  # url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_c634a483/session/cd1d48fc794784ddd6c39979d8a1f805/download/tamizadosFER?w=11ab8d1d"
-  #   "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_7fc790c8/session/2de634f0e89f573e133a232052f96c78/download/tamizadosFER?w=7fc790c8"
+  # # "tamizados  por municipio"
+  # url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_4229f151/session/18c2a1510d96d4f96549146ab71cd341/download/tamizadosFER?w=a8d8dac3"
   # download.file(url_deaths,destfile = "raw_files/gt_tests_tmp.csv")
-  # "Fallecidos por municipio"
-  # url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_c634a483/session/cd1d48fc794784ddd6c39979d8a1f805/download/fallecidosFF?w=11ab8d1d"
-  #   "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_7fc790c8/session/2de634f0e89f573e133a232052f96c78/download/fallecidosFF?w=7fc790c8"
+  # # "Fallecidos por municipio"
+  # url_deaths = "https://gtmvigilanciacovid.shinyapps.io/3869aac0fb95d6baf2c80f19f2da5f98/_w_4229f151/session/18c2a1510d96d4f96549146ab71cd341/download/fallecidosFF?w=a8d8dac3"
   # download.file(url_deaths,destfile = "raw_files/gt_deaths_tmp.csv")
 }
 
