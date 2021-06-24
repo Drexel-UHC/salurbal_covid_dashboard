@@ -84,7 +84,7 @@ salurbal_covid19_update = function(){
   }
   
   ## 3. Send Email ----
-  if(cpu_RL){ 
+  { 
     library(tableHTML)
     library(RDCOMClient)
     library(tidyverse)
