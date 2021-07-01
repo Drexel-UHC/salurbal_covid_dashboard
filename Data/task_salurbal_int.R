@@ -128,11 +128,8 @@ salurbal_covid19_update = function(){
     library (RDCOMClient)
     Outlook <- COMCreate("Outlook.Application")
     Email = Outlook$CreateItem(0)
-    Email[["to"]] = ifelse((format(Sys.Date(),"%a")%in%c("Wed"))&
-                             (format(Sys.time(),"%H")>=17)&
-                             (!str_detect(getwd(),"Development") ),
-                           "rl627@drexel.edu;ub45@drexel.edu;jlk465@drexel.edu;",
-                           "rl627@drexel.edu") 
+    Email[["to"]] = "rl627@drexel.edu"
+    # Email[["to"]] = "rl627@drexel.edu;ub45@drexel.edu;jlk465@drexel.edu;"
     Email[["cc"]] = ""
     Email[["bcc"]] = ""
     Email[["subject"]] = subject_tmp
