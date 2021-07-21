@@ -22,25 +22,7 @@ salurbal_covid19_update = function(){
   
   ## 2. Save Files -----
   {
-    if (str_detect(getwd(),"Dev")){
-      print("Step 2: Save to Dev")
-      ### Save Static
-      save(
-        countries_salurbal,other_central_countries,other_south_countries,
-        other_carribean_countries,other_lac_countries,lac_countries,minc,mind,
-        countries_references,countries_interest,col_rolling,
-        country_coords,
-        sf_world,salurbal_l1_sf,sf_salurbal_0.8,  
-        xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
-        tidy.data.all.old,
-        file = "../App (Development)/covid19_processed_data_static.rdata")
-      ### Save Dynamic
-      save(
-        df_map_data,map_global_totals,subset_dates_tmp,
-        choices_df,
-        tidy.data.all.new,
-        file = "../App (Development)/covid19_processed_data_dynamic.rdata")
-    } else {
+    {
       print("Step 2: Save to Clean")
       ### Save Static
       save(
@@ -52,6 +34,12 @@ salurbal_covid19_update = function(){
         xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
         tidy.data.all.old,
         file = "../App (Production)/covid19_processed_data_static.rdata")
+      ### Save Dynamic
+      save(
+        df_map_data,map_global_totals,subset_dates_tmp,
+        choices_df,
+        tidy.data.all.new,
+        file = "../App (Production)/covid19_processed_data_dynamic.rdata")
       ### Save Data
       save(
         countries_salurbal,other_central_countries,other_south_countries,
@@ -67,20 +55,20 @@ salurbal_covid19_update = function(){
         choices_df,
         tidy.data.all.new,
         file = "../Clean/covid19_processed_data_dynamic.rdata")
-      
-      ### Push if no error and after 10PM
-      if ( (!any(str_detect(task1, "Error")))&
-           (format(Sys.time(),"%H")>14)&
-           (file.size("../Clean/covid19_processed_data_dynamic.rdata")<970000)) {
-        print("Step 2: Push to GitHub")
-        git2r::config(user.name = "rl627",user.email = "rl627@drexel.edu")
-        git2r::config()
-        gitstatus()
-        gitadd()
-        gitcommit()
-        gitpush()
-      }
     }
+    ### Push if no error and after 10PM
+    if ( (!any(str_detect(task1, "Error")))&
+         (format(Sys.time(),"%H")>14)&
+         (file.size("../Clean/covid19_processed_data_dynamic.rdata")<970000)) {
+      print("Step 2: Push to GitHub")
+      git2r::config(user.name = "rl627",user.email = "rl627@drexel.edu")
+      git2r::config()
+      gitstatus()
+      gitadd()
+      gitcommit()
+      gitpush()
+    }
+    
   }
   
   ## 3. Send Email ----
@@ -118,10 +106,10 @@ salurbal_covid19_update = function(){
                          "Hi SALURBAL COVID-19 Team,<br/><br/>",
                          "This is a biweekly automated email to keep track of our data updates.
                        Please see the table below for details about the data update for ",
-                       Sys.time() %>% format("%I:%M %p %b %d, %Y."),
-                       "<br/><br/>",
-                       html_table_tmp,
-                       "<br/><br/>Thanks,<br/>Ran"
+                         Sys.time() %>% format("%I:%M %p %b %d, %Y."),
+                         "<br/><br/>",
+                         html_table_tmp,
+                         "<br/><br/>Thanks,<br/>Ran"
                        )
     )
     ## Send email (Daily to self and Weekly to group)
