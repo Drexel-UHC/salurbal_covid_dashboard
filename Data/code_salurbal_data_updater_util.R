@@ -451,6 +451,15 @@ salurbal_download_zip = function(iso2_tmp,url_tmp, output_name_tmp){
   
 }
 
+gitpull = function(dir = getwd()){
+  cmd_list <- list(
+    cmd1 = tolower(substr(dir,1,2)),
+    cmd2 = paste("cd",dir),
+    cmd3 = "git pull"
+  )
+  cmd <- paste(unlist(cmd_list),collapse = " & ")
+  shell(cmd)
+}
 
 # Git status.
 gitstatus <- function(dir = getwd()){

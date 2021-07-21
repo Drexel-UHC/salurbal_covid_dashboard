@@ -1,7 +1,5 @@
 {
-  
-  rm(list=ls())
-  library(httr)
+  # library(httr)
   library(rintrojs)
   library(cowplot)
   library(shiny)
@@ -12,68 +10,30 @@
   library(shinyWidgets)
   library(shinydashboard)
   library(shinythemes)
-  library(janitor)
+  # library(janitor)
   library(scales)
   library(gridExtra)
   library(DT)
-  library(sparkline)
+  # library(sparkline)
   library(stringr)
   library(lubridate)
   library(ggrepel)
-  library(ggplot2)
+  # library(ggplot2)
   library(dplyr)
   options(scipen = 99)
-  load("sf_salurbal_0.8.rdata")
-  load("sf_l2_simp.rdata")
-  load("covid19_processed_data_static.rdata")
+
   
   
-  ## Development Setup
-  # load("covid19_processed_data_dynamic.rdata")
-  
-  ## Stage Set up
-  # load("../Clean/covid19_processed_data_dynamic.rdata")
-  
-  ## Production Setup
-  print("start download")
-  req = content(
-    GET(
-      url = "https://api.github.com/repos/Drexel-UHC/salurbal_covid_dashboard/contents/Clean/covid19_processed_data_dynamic.rdata",
-      authenticate("rl627@drexel.edu", "f72a8b5c5984910d715e1358e917ab74799a74ce")
-    ),
-    as = "parsed")
-  GET(req$download_url,
-      write_disk(path = "tmp_covid.rdata", overwrite = T))
-  load("tmp_covid.rdata")
   
   ### Operationalize data
-  map_dates_all = df_map_data %>% 
-    filter(level =="L1") %>%     
-    count(date) %>% 
-    filter(date > ymd("2020-03-23")) %>% 
-    pull(date)
+  # map_dates_all = df_map_data %>% 
+  #   filter(level =="L1") %>%     
+  #   count(date) %>% 
+  #   filter(date > ymd("2020-03-23")) %>% 
+  #   pull(date)
+  load("clean_ui_elements.rdata")
   source("global.R",local = TRUE)
-  tidy.data.all = bind_rows(tidy.data.all.old,tidy.data.all.new) %>% 
-    mutate(date = as.Date(date, origin = "1970-01-01")) %>% 
-    arrange(level, country, loc, type_rate,date) 
-  tidy.daily = tidy.data.all  %>% 
-    # filter(cum_value >0) %>% 
-    # select(-cum_value)  %>%
-    rename(value = daily_value) %>% 
-    left_join(xwalk_data_rate) %>% 
-    left_join(xwalk_data_rate_cleaned) %>% 
-    left_join(xwalk_data_titles, 
-              by = c("level", "country", 
-                     "type", "rate")) %>% 
-    left_join(xwalk_salid )
-  tidy.cumulative = tidy.data.all  %>% 
-    rename(n = cum_value)%>% 
-    left_join(xwalk_data_rate) %>% 
-    left_join(xwalk_data_cum_rate_cleaned) %>% 
-    left_join(xwalk_salid )
-
-
-  rm(tidy.data.all.old,tidy.data.all.new,tidy.data.all)
+  
 }
 
 
@@ -83,7 +43,14 @@
 ####  *************************** ####
 server <- function(input, output) {
  
-  Sys.sleep(1)
+  ###  Load Data
+  t1 = Sys.time()
+  load("sf_salurbal_0.8.rdata")
+  load("sf_l2_simp.rdata")
+  load("clean_salurbal_covid19.rdata")
+  t2 = Sys.time()
+  t2-t1
+  ###  Start App
   waiter_hide()
   observeEvent("", {
     showModal(
