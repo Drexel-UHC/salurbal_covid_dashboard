@@ -49,6 +49,36 @@ salurbal_covid19_update = function(){
         pull(date)
       save(map_dates_all,
            file = "../App (Production)/clean_ui_elements.rdata")
+      #### Post process data for app
+      tidy.data.all = bind_rows(tidy.data.all.old,tidy.data.all.new) %>% 
+        mutate(date = as.Date(date, origin = "1970-01-01")) %>% 
+        arrange(level, country, loc, type_rate,date) 
+      tidy.daily = tidy.data.all  %>% 
+        # filter(cum_value >0) %>% 
+        # select(-cum_value)  %>%
+        rename(value = daily_value) %>% 
+        left_join(xwalk_data_rate) %>% 
+        left_join(xwalk_data_rate_cleaned) %>% 
+        left_join(xwalk_data_titles, 
+                  by = c("level", "country", 
+                         "type", "rate")) %>% 
+        left_join(xwalk_salid )
+      tidy.cumulative = tidy.data.all  %>% 
+        rename(n = cum_value)%>% 
+        left_join(xwalk_data_rate) %>% 
+        left_join(xwalk_data_cum_rate_cleaned) %>% 
+        left_join(xwalk_salid )
+      save(
+        countries_salurbal,other_central_countries,other_south_countries,
+        other_carribean_countries,other_lac_countries,lac_countries,minc,mind,
+        countries_references,countries_interest,col_rolling,
+        country_coords,
+        sf_world,salurbal_l1_sf,sf_salurbal_0.8,  
+        xwalk_data_cum_rate_cleaned,xwalk_data_titles,xwalk_data_rate_cleaned,xwalk_data_rate,xwalk_salid,
+        df_map_data,map_global_totals,subset_dates_tmp,
+        choices_df,
+        tidy.cumulative,tidy.daily,
+        file = "../App (Production)/clean_salurbal_covid19.rdata")
       ### Save Data
       save(
         countries_salurbal,other_central_countries,other_south_countries,
