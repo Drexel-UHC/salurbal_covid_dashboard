@@ -22,6 +22,7 @@ salurbal_covid19_update = function(){
   
   ## 2. Save Files -----
   {
+    ### Save Data
     {
       print("Step 2: Save to Clean")
       ### Save Static
@@ -40,6 +41,14 @@ salurbal_covid19_update = function(){
         choices_df,
         tidy.data.all.new,
         file = "../App (Production)/covid19_processed_data_dynamic.rdata")
+      #### Save UI elements
+      map_dates_all = df_map_data %>% 
+        filter(level =="L1") %>%     
+        count(date) %>% 
+        filter(date > ymd("2020-03-23")) %>% 
+        pull(date)
+      save(map_dates_all,
+           file = "../App (Production)/clean_ui_elements.rdata")
       ### Save Data
       save(
         countries_salurbal,other_central_countries,other_south_countries,
@@ -56,6 +65,8 @@ salurbal_covid19_update = function(){
         tidy.data.all.new,
         file = "../Clean/covid19_processed_data_dynamic.rdata")
     }
+    
+    
     ### Push if no error and after 10PM
     if ( (!any(str_detect(task1, "Error")))&
          (format(Sys.time(),"%H")>14)&
