@@ -1,4 +1,5 @@
 # Setup ----
+library(tidyverse)
 dir_data = "C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data/"
 dir_app = "C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/App (Production)/"
 setwd(dir_data)
