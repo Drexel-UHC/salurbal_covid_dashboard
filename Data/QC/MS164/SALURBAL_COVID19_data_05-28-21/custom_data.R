@@ -113,7 +113,7 @@
            rate_7dayMA, rate_label) %>% 
     distinct()
   
-  tidy.daily.data.output_uncensored = tidy.daily.data.output_1 %>% 
+  tidy.daily.data.output_uncensored = tidy.daily.data.output_1_uncensored %>% 
     select(-rate_label) %>% 
     pivot_wider(names_from = type, values_from = c(count_raw, count_7dayMA, rate_7dayMA)) %>% 
     select(country, level, salid, date, 
@@ -128,3 +128,9 @@
   
 }
 # Save Data ----- 
+br_tidy.daily.data.output = tidy.daily.data.output %>% 
+  filter(country =="BR", date<=mdy('02-27-2021'))
+br_tidy.daily.data.output_uncensored = tidy.daily.data.output_uncensored %>% 
+  filter(country =="BR", date<=mdy('02-27-2021'))
+fwrite(br_tidy.daily.data.output,"MS164_COVID19_trends_cases_death.csv")
+fwrite(br_tidy.daily.data.output_uncensored,"MS164_COVID19_trends_cases_death_uncensored.csv")
