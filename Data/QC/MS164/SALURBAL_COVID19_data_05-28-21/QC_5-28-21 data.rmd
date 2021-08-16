@@ -1,0 +1,129 @@
+---
+title: 'MS164: COVID Data QC'
+author: "Ran Li"
+date: "8/16/2021"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+library(tidyverse)
+library(data.table)
+library(scales)
+library(sas7bdat)
+load( "xwalk_sal_br.rdata")
+```
+
+**Question: The sum of L1 is not the same as L2 for both variables**
+
+Below I check the data sent on  5-28-21 for L1/L2 aggregation issues. Conclusion:
+
+- Cumulative data is consistent in L1 vs L2-aggregated-to-L1 values
+- Longituindal data there are some data rows where the L1 vs L2-aggregated-to-L1 values are not consistent. Pease see the report below which details inconsistencies.
+- Can you confirm this is the problem you saw? If so I can fix this in the cleaning code fairly quickly and can send you updated data. 
+
+## Cumulative Data: L1 vs L2
+
+Pulling from the data sent on 5-28-21, it seems like the cumulative data ('SALURBAL_COVID19_cumulative_cases_death.csv') has perfect match between L1 and L2.
+
+```{r }
+# read in cumulative data
+dfCumRaw = fread("SALURBAL_COVID19_cumulative_cases_death.csv") %>% as_tibble()
+
+# Filter L1 level data
+dfCumL1 = dfCumRaw %>% 
+  filter(country == "BR", level == "L1") %>% 
+  select(salid1 = salid, cases, deaths) %>% 
+  pivot_longer(cols = -salid1, names_to = "type")
+
+# Aggregate L2 level to L1 level
+dfCumL1Aggregated = dfCumRaw %>% 
+  filter(country == "BR", level == "L2") %>% 
+  select(salid2 = salid, cases, deaths)  %>% 
+  left_join(xwalk_sal_br %>% select(salid1,salid2)) %>% 
+  group_by(salid1)%>%
+  summarise(cases = sum(cases),
+            deaths = sum(deaths)) %>% 
+  ungroup() %>% 
+  pivot_longer(cols = -salid1, names_to = "type", values_to="value_agg")
+
+# Check difference between L1 value and L2-to-L1 Aggreagation value
+dfMerge =  dfCumL1 %>%  left_join(dfCumL1Aggregated) %>% filter(salid1!="BR888")
+dfMerge%>% 
+  mutate(diff = value_agg - value) %>% 
+  count(diff)
+dfMerge %>% 
+  ggplot(aes(value, value_agg, col = salid1))+
+  geom_abline(slope = 1, intercept = 0, lty = 2)+
+  geom_point()+
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  facet_wrap(~type, scales = 'free')+
+  theme_bw()+
+  theme(legend.position = 'none')+
+  labs(title = 'BR cities: Compare L1 value vs. L2-aggregated-to-L1 value',
+       subtitle = "Dashed line is slope = 1 (perfect match)")
+
+```
+
+## Longitudinal Data: L1 vs L2
+
+Here for each day, outcome and L1 I will compare the L1 value to the L2-aggregated-to-L1 value. 
+
+```{r}
+# read in cumulative data
+dfTrendsRaw = fread("SALURBAL_COVID19_trends_cases_death.csv") %>% as_tibble()
+
+# Filter L1 level data
+dfTrendsL1 = dfTrendsRaw %>% 
+  filter(country == "BR", level == "L1") %>% 
+  select(salid1 = salid, date,cases_raw , deaths_raw ) %>% 
+  pivot_longer(cols = contains('raw'), names_to = "type")
+
+# Aggregate L2 level to L1 level
+dfTrendsL1Aggregated = dfTrendsRaw %>% 
+  filter(country == "BR", level == "L2") %>% 
+  select(salid2 = salid, date,cases_raw , deaths_raw ) %>% 
+  left_join(xwalk_sal_br %>% select(salid1,salid2)) %>% 
+  group_by(salid1,date)%>%
+  summarise(cases_raw = sum(cases_raw),
+            deaths_raw = sum(deaths_raw)) %>% 
+  ungroup() %>% 
+  pivot_longer(cols = contains('raw'), names_to = "type", values_to="value_agg")
+
+# Check difference between L1 value and L2-to-L1 Aggreagation value
+dfMergeTrends =  dfTrendsL1 %>%  left_join(dfTrendsL1Aggregated) %>% filter(salid1!="BR888")%>% 
+  mutate(diff = value_agg - value)
+dfMergeTrends %>% count(diff) 
+
+
+
+```
+
+Out of all data points (L1/Date/Type) the majority of them (127,285) has consistent data between L1 and L2_aggregated_to_L1 values. Lets examine what there are 2877 days with inconsistencies. 
+
+```{r}
+# Check differences
+dfMergeTrends %>% 
+  filter(diff!=0|is.na(diff)) %>% 
+  arrange(salid1, date)
+
+dfMergeTrends %>% 
+  filter(is.na(value_agg)) %>% 
+  count(salid1) 
+```
+
+It seems like everything is just missing for the L2_aggregated_to_L1 for these inconsistencies. This likely due to missing or null data at the municipality level which is then causing aggregation issues to the L2 level. This is could be easily resolved.
+
