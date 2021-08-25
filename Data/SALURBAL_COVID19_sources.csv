@@ -1,7 +1,7 @@
 country,url,output_name,auto
 BR,https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-cities-time.csv.gz,cases-brazil-cities-time.csv.gz,T
 BR,https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv,brazil_state_tmp.csv,T
-MX,http://datosabiertos.salud.gob.mx/gobmx/salud/datos_abiertos/datos_abiertos_covid19.zip,mx_mun_cases_tmp.csv,T
+MX,http://datosabiertos.salud.gob.mx/gobmx/salud/datos_abiertos/datos_abiertos_covid19.zip,mx_mun_cases_tmp.csv,F
 CL,https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto1/Covid-19.csv,chile_raw_counts_tmp.csv,T
 CL,https://github.com/MinCiencia/Datos-COVID19/raw/master/output/producto55/Positividad_por_comuna.csv,chile_raw_tests_tmp.csv,T
 CL,https://github.com/MinCiencia/Datos-COVID19/raw/master/output/producto38/CasosFallecidosPorComuna_std.csv,chile_raw_deaths_tmp.csv,T

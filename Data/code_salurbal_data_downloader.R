@@ -20,10 +20,32 @@
                          df_salurbal_covid_links$url,
                          df_salurbal_covid_links$output_name),
                     function(a,b,c){salurbal_download(a,b,c)})
-
+  
 }
 
-
+# 2. Manual Download  ------- 
+{
+  ### Rename Manual data
+  df_salurbal_manual = read.csv("SALURBAL_COVID19_sources.csv") %>% 
+    as_tibble() %>%
+    filter(!auto)
+  dfOutputNames = tibble(fileName = list.files(path="./manual_files/")) %>% 
+    mutate(outputName = case_when(
+      str_detect(fileName,"MEXICO")~"mx_mun_cases_tmp.csv",
+      str_detect(fileName,"Confirmados por municipio")~"gt_cases_tmp.csv",
+      str_detect(fileName,"Tamizados por municipio")~"gt_tests_tmp.csv",
+      str_detect(fileName,"Fallecidos por municipio")~"gt_deaths_tmp.csv"
+    )) %>% drop_na() %>% 
+    mutate_at(vars(fileName,outputName),~paste0("./manual_files/",.x))
+  map2(dfOutputNames$fileName,dfOutputNames$outputName,~{ file.rename(.x,.y) })
+  
+  ### Copy all manual downloads to raw_tmp
+  outputDirs = paste0("./raw_files/",list.files(path="./manual_files/"))
+  map2(list.files(path="./manual_files/", full.names = T),
+       outputDirs,
+       ~{file.remove(.y)
+         file.rename(.x,.y)} )
+}
 
 # 3. Status update  ------- 
 {
@@ -34,7 +56,7 @@
   df_status_manual = read.csv("SALURBAL_COVID19_sources.csv") %>% 
     as_tibble() %>%
     filter(!auto) %>% 
-    mutate(full_name = paste0("raw_files/",output_name),
+    mutate(full_name = paste0("manual_files/",output_name),
            date = file.info(full_name) %>% pull(mtime)%>% as.Date(),
            status = "Manual") %>% 
     select(country, output = output_name,status, date)
