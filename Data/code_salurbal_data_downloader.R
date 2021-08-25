@@ -56,7 +56,7 @@
   df_status_manual = read.csv("SALURBAL_COVID19_sources.csv") %>% 
     as_tibble() %>%
     filter(!auto) %>% 
-    mutate(full_name = paste0("manual_files/",output_name),
+    mutate(full_name = paste0("raw_files/",output_name),
            date = file.info(full_name) %>% pull(mtime)%>% as.Date(),
            status = "Manual") %>% 
     select(country, output = output_name,status, date)
