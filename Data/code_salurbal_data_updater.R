@@ -5,6 +5,9 @@
   source("code_salurbal_data_updater_util.R")
   cutoff_date = "05-25-2021" 
   
+  ## Subset to every 3 days 
+  n_days = 7
+  
   ### Global Variables
   xwalk_countries = tibble(country =c("Argentina",
                                       "Brazil",
@@ -2351,8 +2354,6 @@ try_compile = try({
     filter(level%in%c("L1","L2"))
   
   #### ___11.4 - App Data ####
-  ## Subset to every 3 days 
-  n_days = 3
   tidy.data.all = tidy.daily   %>% 
     select(level, country, 
            loc, date, 
@@ -2422,7 +2423,7 @@ try_compile = try({
     filter(date>=as.integer(mdy(cutoff_date)))
   
   #### ___11.5 - Save Image ####
-  save.image(file = "raw_files/space.RData")
+  # save.image(file = "raw_files/space.RData")
   print("Okay")
   
 }
