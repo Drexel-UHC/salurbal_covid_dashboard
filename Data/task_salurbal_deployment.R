@@ -1,8 +1,10 @@
 # Setup ----
+print(paste("Start SALURBAL COVID App deployment",Sys.time()))
 library(tidyverse)
 dir_data = "C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data/"
 dir_app = "C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/App (Production)/"
 setwd(dir_data)
+source("secret.R")
 # source("code_salurbal_data_updater_util.R", local = T)
 appName_tmp = "salurbal_covid19"
 sysTime_tmp = Sys.time() %>% format("%I:%M %p %b %d, %Y.")
@@ -16,6 +18,7 @@ gitpull = function(dir = getwd()){
   shell(cmd)
 }
 gitpull()
+print("Setup Done")
 
 
 
@@ -23,16 +26,21 @@ gitpull()
 library(rsconnect)
 setwd(dir_app)
 deployment_status = try({
+  rsconnect::setAccountInfo(name=name, token=token, secret=secret)
   deployApp(account = "drexel-uhc",
             appName = appName_tmp,
-            forceUpdate  = T)
+            forceUpdate  = T, logLevel  = 'verbose')
   # Sys.sleep(time = 60)
   # browseURL("https://drexel-uhc.shinyapps.io/salurbal_covid19/")
   print("Deployment Okay")
 })
+print("Deployment Status:")
+print(deployment_status)
 
 # Email notification ----
 {
+  
+  ## Send email (Daily to self and Weekly to group)
   library (RDCOMClient)
   library(tidyverse)
   subject_tmp = ifelse(str_detect(deployment_status,"Error"),
@@ -45,9 +53,10 @@ deployment_status = try({
                      str_c("Hi SALURBAL COVID-19 Data Platform Team,<br/><br/>",
                            "Notification of successful daily deployment of '",
                            appName_tmp,"' which scheduled at ",sysTime_tmp))
-  
   Outlook <- COMCreate("Outlook.Application")
+  print("Created Outlook Object")
   Email = Outlook$CreateItem(0)
+  print("Created Outlook Email")
   Email[["to"]] =  "rl627@drexel.edu"
   Email[["cc"]] = ""
   Email[["bcc"]] = ""
@@ -55,4 +64,6 @@ deployment_status = try({
   Email[["htmlbody"]] = body_tmp
   Email$Send()
   rm(Outlook, Email)
+  print("Email Done")
+  
 }
