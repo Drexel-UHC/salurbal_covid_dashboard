@@ -921,16 +921,17 @@ try_CO = try({
     clean_names() %>%
     select(date = contains("fecha_de_notifica"),
            mun = contains("divipola_municipio")) %>% 
-    mutate(mun = str_pad(mun, width = 5, pad = "0")) %>% 
+    mutate(mun = str_pad(mun, width = 5, pad = "0"),
+           date = lubridate::as_date(date)) %>% 
     mutate_if(is.character,~stringi::stri_trans_general(.x, "Latin-ASCII")) %>% 
     group_by(date, mun) %>% 
     summarise(confirmed =n()) %>% 
     ungroup() %>% 
-    rowwise() %>% 
-    mutate(index_tmp = str_locate(date," ")[1]-1) %>% 
-    mutate(date2 = (str_sub(date,1,index_tmp))) %>% 
-    ungroup() %>% 
-    mutate(date = dmy(date2) )%>% 
+    # rowwise() %>% 
+    # mutate(index_tmp = str_locate(date," ")[1]-1) %>% 
+    # mutate(date2 = (str_sub(date,1,index_tmp))) %>% 
+    # ungroup() %>% 
+    # mutate(date = dmy(date2) )%>% 
     filter(date>"2020-03-01")%>% 
     select(mun, date, confirmed) %>% 
     arrange(mun, date)
@@ -940,14 +941,15 @@ try_CO = try({
     clean_names() %>%
     select(date = contains("fecha_de_muer"),
            mun = contains("divipola_municipio")) %>% 
-    mutate(mun = str_pad(mun, width = 5, pad = "0")) %>% 
+    mutate(mun = str_pad(mun, width = 5, pad = "0"),
+           date = lubridate::as_date(date)) %>% 
     mutate_if(is.character,~stringi::stri_trans_general(.x, "Latin-ASCII")) %>% 
-    filter(date != "") %>% 
-    rowwise() %>% 
-    mutate(index_tmp = str_locate(date," ")[1]-1) %>% 
-    mutate(date2 = (str_sub(date,1,index_tmp))) %>% 
-    ungroup() %>% 
-    mutate(date = dmy(date2) )%>% 
+    filter(!is.na(date)) %>%  
+    # rowwise() %>% 
+    # mutate(index_tmp = str_locate(date," ")[1]-1) %>% 
+    # mutate(date2 = (str_sub(date,1,index_tmp))) %>% 
+    # ungroup() %>% 
+    # mutate(date = dmy(date2) )%>% 
     filter(date>"2020-03-01") %>% 
     group_by(date, mun) %>% 
     summarise(deaths =n()) %>% 
