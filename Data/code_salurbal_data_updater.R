@@ -3,7 +3,7 @@
   rm(list=ls()[ !str_detect(ls(), c("cpu_RL|cpu_UHC|df_update_status")) ])
   options(timeout=14400)
   source("code_salurbal_data_updater_util.R")
-  cutoff_date = "05-25-2021" 
+  cutoff_date = "03-01-2022" 
   
   ## Subset to every 3 days 
   n_days = 7
