@@ -8,7 +8,6 @@
     if (cpu_UHC) { 
       setwd("C:/Users/rl627/Desktop/Git/SALURBAL COVID19 Dashbaord (Private)/Data") 
     } else { setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data") }
-    load("manuscripts/serena/processed-data/pop_ar_by_age.rdata")
   }
 
   

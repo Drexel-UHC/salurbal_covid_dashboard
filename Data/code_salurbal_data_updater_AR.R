@@ -1,5 +1,6 @@
 # 0. Setup -----
 {
+  
   source("code_salurbal_data_updater_util.R")
   cutoff_date = "05-25-2021" 
   
@@ -22,6 +23,18 @@
                     "Guatemala"="GT",
                     "Mexico"="MX",
                     "Peru"="PE"))
+  
+  ## By Age denoms
+  load("manuscripts/serena/processed-data/pop_ar_by_age.rdata")
+  pop_df_ar_age = df_pop_l1_ar %>% 
+    mutate(level = "L1") %>% 
+    select(level, age_group, loc = salid1, pop) %>% 
+    bind_rows(
+      df_pop_l2_ar %>% 
+        mutate(level = "L2") %>% 
+        select(level, age_group,loc = salid2, pop)
+    ) %>% 
+    mutate(loc = as.character(loc))
 }
 
 
@@ -159,8 +172,8 @@ try_AR = try({
                                             salid1)) %>%
                      left_join(
                        # pop_df %>% filter(level == "L1") %>% select(-level)
-                       df_pop_l1_ar %>% select(loc = salid1, age_group, pop) ,
-                       by = c("salid1"="loc", age_group)) %>%
+                       pop_df_ar_age %>% filter(level == "L1") %>% select(-level),
+                       by = c("salid1"="loc", 'age_group')) %>%
                      mutate(confirmed_rate = round((confirmed/pop)*10^6,2),
                             deaths_rate = round((deaths/pop)*10^7,2))   %>%
                      rename(loc = salid1_name) %>%
@@ -172,11 +185,12 @@ try_AR = try({
     
     
     full_ar_l2 = ar_mun_file  %>%
-      group_by(age_group) %>% 
+      mutate(grouper = age_group) %>% 
+      group_by(grouper) %>% 
       group_modify(~.x %>% 
                      left_join(xwalk_sal_ar) %>%
                      mutate(level = "L2") %>%
-                     group_by(date, level,salid2, salid2_name, country) %>%
+                     group_by(date, age_group, level,salid2, salid2_name, country) %>%
                      summarise(confirmed = sum(confirmed),
                                deaths = sum(deaths)) %>%
                      ungroup() %>%
@@ -189,14 +203,16 @@ try_AR = try({
                                             salid2)) %>%
                      left_join(
                        # pop_df %>% filter(level == "L2") %>% select(-level),
-                       df_pop_l2_ar %>% select(loc = salid2, age_group, pop) ,
-                       by = c("salid2"="loc", age_group)) %>%
+                       pop_df_ar_age %>% filter(level == "L2") %>% select(-level),
+                       by = c("salid2"="loc", 'age_group')) %>%
                      mutate(confirmed_rate = round((confirmed/pop)*10^6,2),
                             deaths_rate = round((deaths/pop)*10^7,2))   %>%
                      rename(loc = salid2_name) %>%
                      mutate(country = "Argentina")%>%
                      arrange(salid2, date)) %>% 
-      ungroup()}
+      ungroup() %>% 
+      select(-grouper)
+    }
   
   
   
@@ -241,121 +257,121 @@ try_compile = try({
   
   
 })
+
 #  11. Saving Rdata (covid19_processed_data.rdata) ####
 {
-  # ___11.1 -  tidy.daily  ####
-  tidy.daily.subnational = list( tidy.daily.ar.l1,
-                                 tidy.daily.ar.l2) %>% 
-    bind_rows() %>% 
-    filter(smooth_days == 7)
-  
-  
-  tidy.daily = tidy.daily.subnational %>% 
-    select(level,country, type,age_group, loc, salid,date, rollsum, rate) %>% 
-    pivot_longer(cols = c(rollsum,rate),names_to = "rate") %>% 
-    mutate(value = ifelse(type == "deaths"&rate == "rate",value*10, value)) %>%
-    filter(!(type == "positivity"&rate == "rollsum")) %>% 
-    mutate(ylabs = case_when(type =="confirmed"&rate=="rollsum"~"New Cases",
-                             type =="confirmed"&rate=="rate"~"New Cases per 1M",
-                             type =="deaths"&rate=="rollsum"~"New Deaths",
-                             type =="deaths"&rate=="rate"~"New Deaths per 10M",
-                             type =="tests"&rate=="rollsum"~"Daily Tests",
-                             type =="tests"&rate=="rate"~"New Tests per 1M",
-                             type =="positivity"&rate=="rate"~"New Testing Positivity")) %>% 
-    mutate(title = case_when(
-      level =="country"~paste("Daily",ylabs,"in the LAC Region" ),
-      level == "state"~paste("Daily",ylabs,"in States of",country),
-      level == "L1"~paste("Daily",ylabs,"in Cities of",country),
-      level == "L2"~paste("Daily",ylabs,"in Sub-Cities of",country)
-    )) %>% 
-    mutate(rate = rate %>% recode("rollsum"="count"))  %>% 
-    mutate(rate_cleaned = case_when(
-      type =="confirmed"&rate=="rate"~"count per 1 M",
-      type =="deaths"&rate=="rate"~"count per 10 M",
-      type =="tests"&rate=="rate"~"count per 1M",
-      type =="positivity"&rate=="rate"~"% of Tests Positive",
-      TRUE~rate
-    )) %>% 
-    filter(!is.na(value)) %>% 
-    mutate(type = ifelse(type =="confirmed","cases",type)) %>% 
-    mutate(value = ifelse(value<0,0,value))
-  
-  
-  
-  tidy.daily.data = tidy.daily %>% 
-    select(level, country, age_group, type, rate, salid, loc, date, value) %>% 
-    filter(level%in%c("L1","L2"))
-  
-  
-  
-  # ___11.2 - tidy.cumulative   ####
-  dfa = tidy.daily.subnational %>% 
-    select(level,country, type, age_group, loc, salid,date, daily_counts) %>% 
-    mutate(type = type %>% recode("confirmed"="cases")) %>% 
-    group_by(level, country, age_group, loc, salid,type) %>% 
-    group_modify(~.x %>% 
-                   arrange(date) %>% 
-                   mutate(cum_value = cumsum(daily_counts) ) ) %>% 
-    ungroup() %>% 
-    arrange(level, country, loc, salid,type,date)
-  
-  df2_cases_tests_deaths = dfa %>%   
-    filter(type!="positivity") %>% 
-    mutate(loc2 = ifelse(!level%in%c("L1","L2"),
-                         loc,
-                         salid)) %>% 
-    left_join(
-      # pop_df %>% rename(loc2 = loc)
-      df_
-    ) %>% 
-    filter(!is.na(pop)) %>% 
-    select(-loc2, -daily_counts) %>% 
-    mutate(rate = case_when(
-      type%in%c("cases", "tests")~(cum_value/pop)*10^6,
-      type%in%c("deaths")~(cum_value/pop)*10^7
-    )) %>% 
-    select(-pop)
-  
-  
-  df2 = bind_rows(df2_cases_tests_deaths )
+  {# ___11.1 -  tidy.daily  ####
+    tidy.daily.subnational = list( tidy.daily.ar.l1,
+                                   tidy.daily.ar.l2) %>% 
+      bind_rows() %>% 
+      filter(smooth_days == 7)
+    
+    
+    tidy.daily = tidy.daily.subnational %>% 
+      select(level,country, type,age_group, loc, salid,date, rollsum, rate) %>% 
+      pivot_longer(cols = c(rollsum,rate),names_to = "rate") %>% 
+      mutate(value = ifelse(type == "deaths"&rate == "rate",value*10, value)) %>%
+      filter(!(type == "positivity"&rate == "rollsum")) %>% 
+      mutate(ylabs = case_when(type =="confirmed"&rate=="rollsum"~"New Cases",
+                               type =="confirmed"&rate=="rate"~"New Cases per 1M",
+                               type =="deaths"&rate=="rollsum"~"New Deaths",
+                               type =="deaths"&rate=="rate"~"New Deaths per 10M",
+                               type =="tests"&rate=="rollsum"~"Daily Tests",
+                               type =="tests"&rate=="rate"~"New Tests per 1M",
+                               type =="positivity"&rate=="rate"~"New Testing Positivity")) %>% 
+      mutate(title = case_when(
+        level =="country"~paste("Daily",ylabs,"in the LAC Region" ),
+        level == "state"~paste("Daily",ylabs,"in States of",country),
+        level == "L1"~paste("Daily",ylabs,"in Cities of",country),
+        level == "L2"~paste("Daily",ylabs,"in Sub-Cities of",country)
+      )) %>% 
+      mutate(rate = rate %>% recode("rollsum"="count"))  %>% 
+      mutate(rate_cleaned = case_when(
+        type =="confirmed"&rate=="rate"~"count per 1 M",
+        type =="deaths"&rate=="rate"~"count per 10 M",
+        type =="tests"&rate=="rate"~"count per 1M",
+        type =="positivity"&rate=="rate"~"% of Tests Positive",
+        TRUE~rate
+      )) %>% 
+      filter(!is.na(value)) %>% 
+      mutate(type = ifelse(type =="confirmed","cases",type)) %>% 
+      mutate(value = ifelse(value<0,0,value))
+    
+    
+    
+    tidy.daily.data = tidy.daily %>% 
+      select(level, country, age_group, type, rate, salid, loc, date, value) %>% 
+      filter(level%in%c("L1","L2"))}
   
   
   
-  tidy.cumulative = df2%>% 
-    pivot_longer(cols = c(cum_value, rate), 
-                 names_to = "rate",
-                 values_to = "n") %>% 
-    filter(!(type == "positivity"& rate == "cum_value")) %>% 
-    mutate(rate = rate %>% recode("cum_value"="count")) %>% 
-    mutate(rate_cleaned = case_when(
-      type =="cases"&rate=="rate"~"count per 1 M",
-      type =="deaths"&rate=="rate"~"count per 10 M",
-      type =="tests"&rate=="rate"~"Tests per 1 M",
-      type =="positivity"&rate=="rate"~"% of Tests Positive",
-      TRUE~"count"
-    )) %>% 
-    mutate(n = round(n, 0)) %>% 
-    arrange(country, type,rate, loc, date) 
-  
-  tidy.cumulative %>%
-    filter(level == "L2") %>% 
-    # filter(type == "tests") %>% 
-    filter(rate == "count") %>% 
-    ggplot(aes(date, n,col =loc))+
-    geom_line()+
-    # facet_wrap(~country)+
-    facet_grid(rows = vars(country), cols = vars(type))+
-    # facet_grid(rows = vars(type), cols = vars(rate))+
-    theme(legend.position = 'none')
-  
-  tidy.cumulative.data = tidy.cumulative %>%
-    mutate(level = case_when(
-      level == "city"~"L1",
-      level == "sub-city"~"L2",
-      TRUE~level
-    )) %>% 
-    select(level, country,type, rate, salid,age_group, loc, date, value = n)%>% 
-    filter(level%in%c("L1","L2"))
+  {# ___11.2 - tidy.cumulative   ####
+    dfa = tidy.daily.subnational %>% 
+      select(level,country, type, age_group, loc, salid,date, daily_counts) %>% 
+      mutate(type = type %>% recode("confirmed"="cases")) %>% 
+      group_by(level, country, age_group, loc, salid,type) %>% 
+      group_modify(~.x %>% 
+                     arrange(date) %>% 
+                     mutate(cum_value = cumsum(daily_counts) ) ) %>% 
+      ungroup() %>% 
+      arrange(level, country, loc, salid,type,date)
+    
+    df2_cases_tests_deaths = dfa %>%   
+      filter(type!="positivity") %>% 
+      mutate(loc2 = ifelse(!level%in%c("L1","L2"),
+                           loc,
+                           salid)) %>% 
+      left_join(
+        pop_df_ar_age %>% rename(loc2 = loc)
+      ) %>% 
+      filter(!is.na(pop)) %>% 
+      select(-loc2, -daily_counts) %>% 
+      mutate(rate = case_when(
+        type%in%c("cases", "tests")~(cum_value/pop)*10^6,
+        type%in%c("deaths")~(cum_value/pop)*10^7
+      )) %>% 
+      select(-pop)
+    
+    
+    df2 = bind_rows(df2_cases_tests_deaths )
+    
+    
+    
+    tidy.cumulative = df2%>% 
+      pivot_longer(cols = c(cum_value, rate), 
+                   names_to = "rate",
+                   values_to = "n") %>% 
+      filter(!(type == "positivity"& rate == "cum_value")) %>% 
+      mutate(rate = rate %>% recode("cum_value"="count")) %>% 
+      mutate(rate_cleaned = case_when(
+        type =="cases"&rate=="rate"~"count per 1 M",
+        type =="deaths"&rate=="rate"~"count per 10 M",
+        type =="tests"&rate=="rate"~"Tests per 1 M",
+        type =="positivity"&rate=="rate"~"% of Tests Positive",
+        TRUE~"count"
+      )) %>% 
+      mutate(n = round(n, 0)) %>% 
+      arrange(country, type,rate, loc, date) 
+    
+    tidy.cumulative %>%
+      filter(level == "L2") %>% 
+      # filter(type == "tests") %>% 
+      filter(rate == "count") %>% 
+      ggplot(aes(date, n,col =loc))+
+      geom_line()+
+      # facet_wrap(~country)+
+      facet_grid(rows = vars(country), cols = vars(type))+
+      # facet_grid(rows = vars(type), cols = vars(rate))+
+      theme(legend.position = 'none')
+    
+    tidy.cumulative.data = tidy.cumulative %>%
+      mutate(level = case_when(
+        level == "city"~"L1",
+        level == "sub-city"~"L2",
+        TRUE~level
+      )) %>% 
+      select(level, country,type, rate, salid,age_group, loc, date, value = n)%>% 
+      filter(level%in%c("L1","L2"))}
 }
 
 #12. Outputs   ###### 
@@ -390,15 +406,18 @@ if (!str_detect(getwd(),"Dev")){
                recode("count"="count_7dayMA",
                       "raw count"="count_raw")) %>%
       pivot_wider(names_from = count_smoothed, values_from = value) %>%
-      left_join(bind_rows(pop_l1,pop_l2) %>% select(salid = loc, pop)) %>%
+      left_join(
+        # bind_rows(pop_l1,pop_l2) %>% select(salid = loc, pop)
+        pop_df_ar_age %>% select(salid = loc, age_group, pop)
+      ) %>%
       select(level, country, salid,loc, age_group, type, date,count_raw,count_7dayMA)%>%
       arrange(level, country, salid, loc, type,date) %>%
       mutate_at(vars(count_raw, count_7dayMA), ~ifelse(.x<0,NA,.x))  %>%
       left_join(raw.daily.subnational.rates %>%
-                  select(level, salid, type, date,rate_7dayMA, rate_label ),
-                by =c("level", "salid","type", "date")) %>% 
+                  select(level, salid, age_group, type, date,rate_7dayMA, rate_label ),
+                by =c("level", "salid","type", "age_group","date")) %>% 
       left_join(xwalk_countries) %>% 
-      select(country= iso2, level, salid, type, date, 
+      select(country= iso2, level, salid, type, date, age_group,
              count_raw, count_7dayMA,
              rate_7dayMA, rate_label) %>% 
       distinct()
@@ -406,7 +425,7 @@ if (!str_detect(getwd(),"Dev")){
     tidy.daily.data.output = tidy.daily.data.output_1 %>% 
       select(-rate_label) %>% 
       pivot_wider(names_from = type, values_from = c(count_raw, count_7dayMA, rate_7dayMA)) %>% 
-      select(country, level, salid, date, 
+      select(country, level, salid, date,age_group, 
              cases_raw = count_raw_cases,
              cases_7dayMA = count_7dayMA_cases,
              cases_per_1M = rate_7dayMA_cases, 
@@ -418,30 +437,14 @@ if (!str_detect(getwd(),"Dev")){
     
   }
   
-  # ___12.2 trends_tests_positivity.csv -----
-  {
-    tidy.daily.testing.output = tidy.daily.data %>% 
-      filter(type%in%c( "positivity","tests")) %>% 
-      pivot_wider(values_from = value, names_from = c(type,rate))%>% 
-      left_join(xwalk_countries) %>% 
-      select(-loc)%>% 
-      distinct() %>% 
-      select(country = iso2, level, salid, date, 
-             tests = tests_count,
-             tests_per_1M = tests_rate,
-             pct_positive = positivity_rate) %>% 
-      mutate_at(vars(tests,tests_per_1M,pct_positive),
-                ~round(.x,0))
-    
-  }
-  
+ 
   # ___12.3 cumulative_cases_death.csv -----
   {
     tidy.cumulative.output =  tidy.cumulative %>%
       filter(!type%in%c("positivity","tests")) %>% 
       filter(level%in%c("L1","L2")) %>% 
-      select(level, country, salid,type, rate, rate_cleaned,date, n) %>% 
-      group_by(level, country, salid,type, rate, rate_cleaned) %>% 
+      select(level, country, salid,type, age_group, rate, rate_cleaned,date, n) %>% 
+      group_by(level, country, salid, age_group,type, rate, rate_cleaned) %>% 
       group_modify(~{
         .x %>% filter(date == max(date))
       }) %>% 
@@ -454,50 +457,28 @@ if (!str_detect(getwd(),"Dev")){
                       "deaths per 10 M"="deaths_per_10M",
                       "Tests per 1 M"="test_per_1M",
                       "% of Tests Positive"="pct_positive")) %>% 
-      select(level, country = iso2, salid,rate_cleaned, n) %>% 
+      select(level, country = iso2, salid, age_group,rate_cleaned, n) %>% 
       pivot_wider(names_from = rate_cleaned, values_from = n) %>% 
       drop_na()
   }
   
-  # ___12.4 cumulative_tests_positivity.csv -----
-  {
-    tidy.cumulative.testing.output =  tidy.cumulative %>%
-      filter(type%in%c("positivity","tests")) %>% 
-      filter(level%in%c("L1","L2")) %>% 
-      select(level, country, salid,type, rate, rate_cleaned,date, n) %>% 
-      group_by(level, country, salid,type, rate, rate_cleaned) %>% 
-      group_modify(~{
-        .x %>% filter(date == max(date))
-      }) %>% 
-      ungroup() %>% 
-      left_join(xwalk_countries) %>% 
-      mutate(rate_cleaned = str_replace(rate_cleaned,
-                                        "count",
-                                        type) %>% 
-               recode("cases per 1 M"="cases_per_1M",
-                      "deaths per 10 M"="deaths_per_10M",
-                      "Tests per 1 M"="test_per_1M",
-                      "% of Tests Positive"="pct_positive")) %>% 
-      select(level, country = iso2, salid,rate_cleaned, n) %>% 
-      pivot_wider(names_from = rate_cleaned, values_from = n) %>% 
-      drop_na()
-  }
+ 
   
   {
-    ## Trends in cases/deaths
-    fwrite(tidy.daily.data.output,"../Outputs/SALURBAL_COVID19_trends_cases_death.csv")
-    zip::zip(files= c("../Outputs/SALURBAL_COVID19_trends_cases_death.csv"),
-             zipfile = "../Outputs/SALURBAL_COVID19_trends_cases_death.zip",
-             mode = "cherry-pick")
-    ## Trends in testing
-    fwrite(tidy.daily.testing.output,"../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv")
-    zip::zip(files ="../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv",
-             zipfile = "../Outputs/SALURBAL_COVID19_trends_tests_positivity.zip",
-             mode = "cherry-pick")
-    ## Cumulative outputs
-    fwrite(tidy.cumulative.output,"../Outputs/SALURBAL_COVID19_cumulative_cases_death.csv")
-    fwrite(tidy.cumulative.testing.output,"../Outputs/SALURBAL_COVID19_cumulative_tests_positivity.csv")
-    
+    # ## Trends in cases/deaths
+    # fwrite(tidy.daily.data.output,"../Outputs/SALURBAL_COVID19_trends_cases_death.csv")
+    # zip::zip(files= c("../Outputs/SALURBAL_COVID19_trends_cases_death.csv"),
+    #          zipfile = "../Outputs/SALURBAL_COVID19_trends_cases_death.zip",
+    #          mode = "cherry-pick")
+    # ## Trends in testing
+    # fwrite(tidy.daily.testing.output,"../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv")
+    # zip::zip(files ="../Outputs/SALURBAL_COVID19_trends_tests_positivity.csv",
+    #          zipfile = "../Outputs/SALURBAL_COVID19_trends_tests_positivity.zip",
+    #          mode = "cherry-pick")
+    # ## Cumulative outputs
+    # fwrite(tidy.cumulative.output,"../Outputs/SALURBAL_COVID19_cumulative_cases_death.csv")
+    # fwrite(tidy.cumulative.testing.output,"../Outputs/SALURBAL_COVID19_cumulative_tests_positivity.csv")
+    # 
   }
 }
 
