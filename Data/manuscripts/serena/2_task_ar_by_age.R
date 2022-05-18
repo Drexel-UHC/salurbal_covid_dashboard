@@ -1,6 +1,4 @@
 
-salurbal_covid19_update = function(){
-  
   ## 0. Setup -----
   {
     library(stringr)
@@ -10,7 +8,9 @@ salurbal_covid19_update = function(){
     if (cpu_UHC) { 
       setwd("C:/Users/rl627/Desktop/Git/SALURBAL COVID19 Dashbaord (Private)/Data") 
     } else { setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data") }
+    load("manuscripts/serena/processed-data/pop_ar_by_age.rdata")
   }
+
   
   
   ## 1. Clean data -----
@@ -20,7 +20,3 @@ salurbal_covid19_update = function(){
   
   
   
-}
-
-salurbal_covid19_update()
-
