@@ -35,6 +35,8 @@
         select(level, age_group,loc = salid2, pop)
     ) %>% 
     mutate(loc = as.character(loc))
+  save(pop_df_ar_age,file = 'manuscripts/serena/processed-data/pop_df_ar_age.rdata')
+  save(pop_df,file = 'manuscripts/serena/processed-data/pop_df.rdata')
 }
 
 
