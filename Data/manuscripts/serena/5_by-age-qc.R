@@ -104,6 +104,7 @@
   
   ##  Aggregate byAge dataset by SALID
   load("processed-data/pop_df_ar_age.rdata")
+  fwrite(pop_df_ar_age,'processed-data/salurbal_AR_covid 5-18-22/Age-groups/denoms_age_groups_ar.csv')
   df_pop_new = pop_df_ar_age %>% 
     group_by(level, salid = loc) %>% 
     summarize(pop_new = sum(pop)) %>% 
