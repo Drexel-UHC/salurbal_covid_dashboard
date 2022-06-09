@@ -1314,7 +1314,8 @@ try_GT = try({
                        date = seq(min_date_tmp,max_date_tmp, by = 'day') ) %>% 
     unnest() %>% 
     left_join(raw_gt_mun_raw) %>% 
-    arrange(mun, date) 
+    arrange(mun, date)  %>% 
+    mutate(country = "Guatemala")
   
   #___8.2 Cumulative #####
   
