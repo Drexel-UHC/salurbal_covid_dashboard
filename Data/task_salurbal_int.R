@@ -9,7 +9,7 @@ salurbal_covid19_update = function(){
     cpu_UHC = !cpu_RL
     if (cpu_UHC) { 
       setwd("C:/Users/rl627/Desktop/Git/SALURBAL COVID19 Dashbaord (Private)/Data") 
-    } else { setwd("C:/Users/ranli/Desktop/Git local/SALURBAL COVID-19 Dashboard/Data") }
+    } else { setwd("D:/git/SALURBAL/SALURBAL COVID-19 Dashboard/Data") }
   }
   
   
